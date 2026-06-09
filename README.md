@@ -41,7 +41,7 @@ DATABASE_URL="postgresql://postgres:SENHA@HOST:5432/postgres" npm run db:apply
 
 Os turnos padrao sao:
 
-- Almoco: 4h
+- Almoço: 4h
 - Lanche: 3h
 - Jantar: 4h
 - Ceia: 2h

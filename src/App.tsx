@@ -21,7 +21,7 @@ import { fetchDashboardData, importDeliveryRows, upsertDailyTargets, upsertShift
 import type { DailyTarget, DeliveryRow, Filters, ShiftConfig } from './types'
 
 const defaultShifts: ShiftConfig[] = [
-  { turno: 'Almoco', expected_hours: 4 },
+  { turno: 'Almoço', expected_hours: 4 },
   { turno: 'Lanche', expected_hours: 3 },
   { turno: 'Jantar', expected_hours: 4 },
   { turno: 'Ceia', expected_hours: 2 },
@@ -141,6 +141,29 @@ function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
   return Array.from(new Set(rows.map((row) => String(row[key] ?? '').trim()).filter(Boolean))).sort()
 }
 
+function normalizedTextKey(value: string) {
+  return value
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
+function uniqueNormalizedOptions(values: string[]) {
+  const options = new Map<string, string>()
+
+  for (const rawValue of values) {
+    const value = rawValue.trim()
+    if (!value) continue
+
+    const key = normalizedTextKey(value)
+    if (!options.has(key)) options.set(key, value)
+  }
+
+  return Array.from(options.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+}
+
 function formatShortDate(value: string) {
   const [year, month, day] = value.split('-')
   return `${day}/${month}/${year.slice(2)}`
@@ -194,15 +217,22 @@ export function App() {
   }, [adminMonth, adminTurno, targets])
 
   const adminTurnoOptions = useMemo(() => {
-    return Array.from(new Set([
+    return uniqueNormalizedOptions([
       ...optionValues(rows, 'turno'),
       ...shifts.map((shift) => shift.turno).filter(Boolean),
-    ])).sort()
+    ])
   }, [rows, shifts])
 
   useEffect(() => {
-    if (adminTurno || adminTurnoOptions.length === 0) return
-    setAdminTurno(adminTurnoOptions[0])
+    if (adminTurnoOptions.length === 0) {
+      if (adminTurno) setAdminTurno('')
+      return
+    }
+
+    if (adminTurnoOptions.includes(adminTurno)) return
+
+    const canonicalTurno = adminTurnoOptions.find((turno) => normalizedTextKey(turno) === normalizedTextKey(adminTurno))
+    setAdminTurno(canonicalTurno ?? adminTurnoOptions[0])
   }, [adminTurno, adminTurnoOptions])
 
   const availableWeeks = useMemo<AvailableWeek[]>(() => {

@@ -16,7 +16,7 @@ create table if not exists public.keeta_shift_config (
 
 insert into public.keeta_shift_config (turno, expected_hours)
 values
-  ('Almoco', 4),
+  ('Almoço', 4),
   ('Lanche', 3),
   ('Jantar', 4),
   ('Ceia', 2)
