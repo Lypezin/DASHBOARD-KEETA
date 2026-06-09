@@ -15,28 +15,44 @@ export const supabase = isSupabaseConfigured
     })
   : null
 
+async function fetchAllRows<T>(table: string, orderColumn: string) {
+  if (!supabase) return [] as T[]
+
+  const pageSize = 1000
+  const rows: T[] = []
+
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .order(orderColumn, { ascending: false, nullsFirst: false })
+      .range(from, to)
+
+    if (error) throw error
+    rows.push(...((data ?? []) as T[]))
+    if (!data || data.length < pageSize) break
+  }
+
+  return rows
+}
+
 export async function fetchDashboardData() {
   if (!supabase) {
     return { rows: [] as DeliveryRow[], targets: [] as DailyTarget[], shifts: [] as ShiftConfig[] }
   }
 
-  const [rowsResult, targetsResult, shiftsResult] = await Promise.all([
-    supabase
-      .from('keeta_delivery_rows')
-      .select('*')
-      .order('delivery_date', { ascending: false, nullsFirst: false })
-      .limit(10000),
-    supabase.from('keeta_daily_targets').select('*').order('target_date', { ascending: false }),
+  const [rows, targetsResult, shiftsResult] = await Promise.all([
+    fetchAllRows<DeliveryRow>('keeta_delivery_rows', 'delivery_date'),
+    fetchAllRows<DailyTarget>('keeta_daily_targets', 'target_date'),
     supabase.from('keeta_shift_config').select('*').order('turno'),
   ])
 
-  if (rowsResult.error) throw rowsResult.error
-  if (targetsResult.error) throw targetsResult.error
   if (shiftsResult.error) throw shiftsResult.error
 
   return {
-    rows: (rowsResult.data ?? []) as DeliveryRow[],
-    targets: (targetsResult.data ?? []) as DailyTarget[],
+    rows,
+    targets: targetsResult,
     shifts: (shiftsResult.data ?? []) as ShiftConfig[],
   }
 }
@@ -90,6 +106,18 @@ export async function upsertDailyTarget(target: DailyTarget) {
     },
     { onConflict: 'target_date,turno_key' },
   )
+  if (error) throw error
+}
+
+export async function upsertDailyTargets(targets: DailyTarget[]) {
+  if (!supabase) throw new Error('Supabase nao configurado.')
+  const payload = targets.map((target) => ({
+    target_date: target.target_date,
+    turno: target.turno || null,
+    required_hours: target.required_hours,
+    notes: target.notes || null,
+  }))
+  const { error } = await supabase.from('keeta_daily_targets').upsert(payload, { onConflict: 'target_date,turno_key' })
   if (error) throw error
 }
 

@@ -1,9 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   CalendarDays,
+  CalendarRange,
+  CheckCircle2,
   Database,
   FileSpreadsheet,
   Filter,
+  LoaderCircle,
   RefreshCw,
   Save,
   Search,
@@ -11,8 +14,8 @@ import {
   Upload,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { format } from 'date-fns'
-import { fetchDashboardData, importDeliveryRows, isSupabaseConfigured, upsertDailyTarget, upsertShiftConfig } from './supabase'
+import { addDays, format, getDaysInMonth } from 'date-fns'
+import { fetchDashboardData, importDeliveryRows, upsertDailyTargets, upsertShiftConfig } from './supabase'
 import type { DailyTarget, DeliveryRow, Filters, ShiftConfig } from './types'
 
 const defaultShifts: ShiftConfig[] = [
@@ -22,9 +25,45 @@ const defaultShifts: ShiftConfig[] = [
   { turno: 'Ceia', expected_hours: 2 },
 ]
 
+function toIsoDate(date: Date) {
+  return format(date, 'yyyy-MM-dd')
+}
+
+function mondayOf(date: Date) {
+  const day = date.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const monday = new Date(date)
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(date.getDate() + diff)
+  return monday
+}
+
+function firstWeekStart(year: number) {
+  return mondayOf(new Date(year, 0, 1))
+}
+
+function getWeekInfo(date = new Date()) {
+  const year = date.getFullYear()
+  const start = firstWeekStart(year)
+  const weekNumber = Math.floor((mondayOf(date).getTime() - start.getTime()) / 604800000) + 1
+  return { year, weekNumber: Math.max(1, weekNumber) }
+}
+
+function getWeekRange(year: number, weekNumber: number) {
+  const start = addDays(firstWeekStart(year), (weekNumber - 1) * 7)
+  return {
+    startDate: toIsoDate(start),
+    endDate: toIsoDate(addDays(start, 6)),
+  }
+}
+
+const currentWeek = getWeekInfo()
+
 const emptyFilters: Filters = {
   startDate: '',
   endDate: '',
+  weekYear: String(currentWeek.year),
+  weekNumber: String(currentWeek.weekNumber),
   name: '',
   turno: '',
   modal: '',
@@ -54,11 +93,8 @@ export function App() {
   const [targets, setTargets] = useState<DailyTarget[]>([])
   const [shifts, setShifts] = useState<ShiftConfig[]>(defaultShifts)
   const [filters, setFilters] = useState<Filters>(emptyFilters)
-  const [targetForm, setTargetForm] = useState<DailyTarget>({
-    target_date: format(new Date(), 'yyyy-MM-dd'),
-    turno: null,
-    required_hours: 10000,
-  })
+  const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
+  const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
   const [status, setStatus] = useState('Pronto para carregar dados.')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
@@ -82,17 +118,43 @@ export function App() {
     refreshData()
   }, [])
 
+  useEffect(() => {
+    const nextTargets = Object.fromEntries(
+      targets
+        .filter((target) => target.target_date.startsWith(adminMonth) && !target.turno)
+        .map((target) => [target.target_date, String(Number(target.required_hours || 0))]),
+    )
+    setMonthTargets(nextTargets)
+  }, [adminMonth, targets])
+
+  const effectiveRange = useMemo(() => {
+    const hasInterval = Boolean(filters.startDate || filters.endDate)
+    if (hasInterval) {
+      return {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        label: 'Intervalo personalizado',
+      }
+    }
+
+    const range = getWeekRange(Number(filters.weekYear), Number(filters.weekNumber))
+    return {
+      ...range,
+      label: `Semana ${filters.weekNumber} de ${filters.weekYear}`,
+    }
+  }, [filters.endDate, filters.startDate, filters.weekNumber, filters.weekYear])
+
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const dateOk = (!filters.startDate || (row.delivery_date ?? '') >= filters.startDate)
-        && (!filters.endDate || (row.delivery_date ?? '') <= filters.endDate)
+      const dateOk = (!effectiveRange.startDate || (row.delivery_date ?? '') >= effectiveRange.startDate)
+        && (!effectiveRange.endDate || (row.delivery_date ?? '') <= effectiveRange.endDate)
       const nameOk = !filters.name || row.conc.toLowerCase().includes(filters.name.toLowerCase())
       const turnoOk = !filters.turno || row.turno === filters.turno
       const modalOk = !filters.modal || row.modal === filters.modal
       const utrOk = !filters.utr || row.utr === filters.utr
       return dateOk && nameOk && turnoOk && modalOk && utrOk
     })
-  }, [filters, rows])
+  }, [effectiveRange.endDate, effectiveRange.startDate, filters, rows])
 
   const summary = useMemo(() => {
     const delivered = filteredRows.reduce((sum, row) => sum + Number(row.delivered_hours || 0), 0)
@@ -103,8 +165,8 @@ export function App() {
 
     const targetTotal = targets
       .filter((target) => {
-        const dateOk = (!filters.startDate || target.target_date >= filters.startDate)
-          && (!filters.endDate || target.target_date <= filters.endDate)
+        const dateOk = (!effectiveRange.startDate || target.target_date >= effectiveRange.startDate)
+          && (!effectiveRange.endDate || target.target_date <= effectiveRange.endDate)
         const turnoOk = !filters.turno || !target.turno || target.turno === filters.turno
         return dateOk && turnoOk
       })
@@ -117,7 +179,7 @@ export function App() {
       targetTotal,
       targetAdherence: targetTotal > 0 ? (delivered / targetTotal) * 100 : 0,
     }
-  }, [filteredRows, filters, targets])
+  }, [effectiveRange.endDate, effectiveRange.startDate, filteredRows, filters.turno, targets])
 
   const byTurno = useMemo(() => {
     const grouped = new Map<string, { turno: string; delivered: number; target: number; online: number; rows: number }>()
@@ -129,6 +191,10 @@ export function App() {
       grouped.set(item.turno, item)
     }
     for (const target of targets) {
+      const dateOk = (!effectiveRange.startDate || target.target_date >= effectiveRange.startDate)
+        && (!effectiveRange.endDate || target.target_date <= effectiveRange.endDate)
+      if (!dateOk) continue
+      if (filters.turno && target.turno !== filters.turno) continue
       if (!target.turno) continue
       const item = grouped.get(target.turno) ?? { turno: target.turno, delivered: 0, target: 0, online: 0, rows: 0 }
       item.target += Number(target.required_hours || 0)
@@ -138,7 +204,7 @@ export function App() {
       ...item,
       online: item.rows ? item.online / item.rows : 0,
     }))
-  }, [filteredRows, targets])
+  }, [effectiveRange.endDate, effectiveRange.startDate, filteredRows, filters.turno, targets])
 
   const byModal = useMemo(() => {
     const grouped = new Map<string, number>()
@@ -163,14 +229,33 @@ export function App() {
     }
   }
 
-  async function saveTarget() {
+  const adminDays = useMemo(() => {
+    const [year, month] = adminMonth.split('-').map(Number)
+    const count = getDaysInMonth(new Date(year, month - 1, 1))
+    return Array.from({ length: count }, (_, index) => {
+      const date = new Date(year, month - 1, index + 1)
+      return {
+        iso: toIsoDate(date),
+        day: index + 1,
+        weekday: new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(date).replace('.', ''),
+      }
+    })
+  }, [adminMonth])
+
+  async function saveMonthTargets() {
     setLoading(true)
     try {
-      await upsertDailyTarget(targetForm)
-      setStatus('Meta diaria salva.')
+      const payload = adminDays.map((day) => ({
+        target_date: day.iso,
+        turno: null,
+        required_hours: Number(monthTargets[day.iso] || 0),
+        notes: `meta mensal ${adminMonth}`,
+      }))
+      await upsertDailyTargets(payload)
+      setStatus(`Metas de ${adminMonth} salvas.`)
       await refreshData()
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao salvar meta.')
+      setStatus(error instanceof Error ? error.message : 'Erro ao salvar metas.')
     } finally {
       setLoading(false)
     }
@@ -204,17 +289,14 @@ export function App() {
             <Database size={18} /> Admin
           </button>
         </nav>
-        <div className="connection">
-          <span className={clsx('dot', isSupabaseConfigured && 'ok')} />
-          {isSupabaseConfigured ? 'Supabase conectado' : 'Configurar Supabase'}
-        </div>
       </aside>
 
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Operacao de entregadores</p>
+            <p className="eyebrow">Operacao KEETA</p>
             <h1>Aderencia e horas entregues</h1>
+            <span className="rangePill">{effectiveRange.label}: {effectiveRange.startDate || 'inicio'} ate {effectiveRange.endDate || 'hoje'}</span>
           </div>
           <button className="iconButton" onClick={refreshData} disabled={loading} title="Atualizar dados">
             <RefreshCw size={18} />
@@ -226,6 +308,12 @@ export function App() {
         {activeTab === 'dashboard' && (
           <>
             <section className="filters">
+              <label><CalendarRange size={15} /> Semana
+                <div className="weekPair">
+                  <input type="number" min="2025" max="2035" value={filters.weekYear} onChange={(event) => setFilters({ ...filters, weekYear: event.target.value })} />
+                  <input type="number" min="1" max="54" value={filters.weekNumber} onChange={(event) => setFilters({ ...filters, weekNumber: event.target.value })} />
+                </div>
+              </label>
               <label><CalendarDays size={15} /> Inicio<input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
               <label><CalendarDays size={15} /> Fim<input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
               <label><Search size={15} /> Nome<input placeholder="Conc" value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
@@ -251,28 +339,62 @@ export function App() {
         )}
 
         {activeTab === 'import' && (
-          <section className="importBox">
-            <FileSpreadsheet size={42} />
-            <h2>Importar planilha operacional</h2>
-            <p>Colunas esperadas: Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e target hours.</p>
-            <label className="fileDrop">
+          <section className="importStage">
+            <div className="importHero">
+              <div className="importIcon"><FileSpreadsheet size={34} /></div>
+              <div>
+                <p className="eyebrow">Atualizacao operacional</p>
+                <h2>Importar planilha de entregadores</h2>
+                <p>Arquivos `.xlsx` ou `.csv` com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e target hours.</p>
+              </div>
+            </div>
+            <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
               <input type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
-              <Upload size={20} /> Selecionar planilha
+              {loading ? <LoaderCircle size={22} /> : <Upload size={22} />}
+              <strong>{loading ? 'Processando arquivo' : 'Selecionar planilha'}</strong>
+              <span>O arquivo sera normalizado e gravado no Supabase em lotes.</span>
             </label>
+            <div className="importChecklist">
+              <span><CheckCircle2 size={16} /> Calcula horas entregues automaticamente</span>
+              <span><CheckCircle2 size={16} /> Mantem payload bruto para auditoria</span>
+              <span><CheckCircle2 size={16} /> Atualiza KPIs ao concluir</span>
+            </div>
           </section>
         )}
 
         {activeTab === 'admin' && (
           <section className="adminGrid">
-            <div className="panel">
-              <h2>Meta de horas por dia</h2>
-              <label>Data<input type="date" value={targetForm.target_date} onChange={(event) => setTargetForm({ ...targetForm, target_date: event.target.value })} /></label>
-              <label>Turno<select value={targetForm.turno ?? ''} onChange={(event) => setTargetForm({ ...targetForm, turno: event.target.value || null })}><option value="">Geral do dia</option>{shifts.map((shift) => <option key={shift.turno}>{shift.turno}</option>)}</select></label>
-              <label>Horas a entregar<input type="number" value={targetForm.required_hours} onChange={(event) => setTargetForm({ ...targetForm, required_hours: Number(event.target.value) })} /></label>
-              <button className="primary" onClick={saveTarget} disabled={loading}><Save size={17} /> Salvar meta</button>
+            <div className="panel monthPanel">
+              <div className="panelHeader">
+                <div>
+                  <p className="eyebrow">Planejamento</p>
+                  <h2>Metas de horas por dia</h2>
+                </div>
+                <label>Mes<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
+              </div>
+              <div className="monthTargets">
+                {adminDays.map((day) => (
+                  <label className="dayTarget" key={day.iso}>
+                    <span>
+                      <strong>{String(day.day).padStart(2, '0')}</strong>
+                      <small>{day.weekday}</small>
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.25"
+                      value={monthTargets[day.iso] ?? ''}
+                      placeholder="0"
+                      onChange={(event) => setMonthTargets({ ...monthTargets, [day.iso]: event.target.value })}
+                    />
+                  </label>
+                ))}
+              </div>
+              <button className="primary" onClick={saveMonthTargets} disabled={loading}><Save size={17} /> Salvar metas do mes</button>
             </div>
-            <div className="panel">
-              <h2>Horas padrao dos turnos</h2>
+            <div className="panel shiftPanel">
+              <p className="eyebrow">Turnos</p>
+              <h2>Horas padrao</h2>
               {shifts.map((shift, index) => (
                 <label key={shift.turno}>{shift.turno}
                   <input type="number" value={shift.expected_hours} onChange={(event) => setShifts(shifts.map((item, itemIndex) => itemIndex === index ? { ...item, expected_hours: Number(event.target.value) } : item))} />
@@ -316,7 +438,7 @@ function DeliveryTable({ rows }: { rows: DeliveryRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.slice(0, 250).map((row) => (
+            {rows.map((row) => (
               <tr key={row.id}>
                 <td>{row.delivery_date ?? '-'}</td>
                 <td>{row.turno}</td>

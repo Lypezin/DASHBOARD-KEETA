@@ -33,6 +33,8 @@ export type ParsedImportRow = Omit<DeliveryRow, 'id' | 'imported_at'> & {
 export type Filters = {
   startDate: string
   endDate: string
+  weekYear: string
+  weekNumber: string
   name: string
   turno: string
   modal: string
