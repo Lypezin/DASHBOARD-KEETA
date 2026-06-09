@@ -159,6 +159,7 @@ export function App() {
   const [shifts, setShifts] = useState<ShiftConfig[]>(defaultShifts)
   const [filters, setFilters] = useState<Filters>(emptyFilters)
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
+  const [adminTurno, setAdminTurno] = useState('')
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
   const [monthFillValue, setMonthFillValue] = useState('')
   const [status, setStatus] = useState('')
@@ -187,11 +188,23 @@ export function App() {
   useEffect(() => {
     const nextTargets = Object.fromEntries(
       targets
-        .filter((target) => target.target_date.startsWith(adminMonth) && !target.turno)
+        .filter((target) => target.target_date.startsWith(adminMonth) && target.turno === adminTurno)
         .map((target) => [target.target_date, String(Number(target.required_hours || 0))]),
     )
     setMonthTargets(nextTargets)
-  }, [adminMonth, targets])
+  }, [adminMonth, adminTurno, targets])
+
+  const adminTurnoOptions = useMemo(() => {
+    return Array.from(new Set([
+      ...optionValues(rows, 'turno'),
+      ...shifts.map((shift) => shift.turno).filter(Boolean),
+    ])).sort()
+  }, [rows, shifts])
+
+  useEffect(() => {
+    if (adminTurno || adminTurnoOptions.length === 0) return
+    setAdminTurno(adminTurnoOptions[0])
+  }, [adminTurno, adminTurnoOptions])
 
   const availableWeeks = useMemo<AvailableWeek[]>(() => {
     const weeks = new Map<string, AvailableWeek>()
@@ -442,16 +455,21 @@ export function App() {
   }, [adminDays, monthTargets])
 
   async function saveMonthTargets() {
+    if (!adminTurno) {
+      setStatus('Selecione um turno para salvar as metas')
+      return
+    }
+
     setLoading(true)
     try {
       const payload = adminDays.map((day) => ({
         target_date: day.iso,
-        turno: null,
+        turno: adminTurno,
         required_hours: Number(monthTargets[day.iso] || 0),
-        notes: `meta mensal ${adminMonth}`,
+        notes: `meta mensal ${adminMonth} - ${adminTurno}`,
       }))
       await upsertDailyTargets(payload)
-      setStatus(`Metas de ${adminMonth} salvas com sucesso`)
+      setStatus(`Metas de ${adminMonth} para ${adminTurno} salvas com sucesso`)
       await refreshData()
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Erro ao salvar metas')
@@ -582,6 +600,13 @@ export function App() {
                   <h2>Metas diárias</h2>
                 </div>
                 <label>Mês<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
+                <label>Turno
+                  <select value={adminTurno} onChange={(event) => setAdminTurno(event.target.value)}>
+                    {adminTurnoOptions.map((turno) => (
+                      <option key={turno} value={turno}>{turno || 'Sem Turno'}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <div className="adminSummary">
                 <div>
