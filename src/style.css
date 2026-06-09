@@ -481,7 +481,25 @@ select:focus {
     rgba(255, 255, 255, 0.62);
 }
 
-.tableTitle > span {
+.tableActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tableActions label {
+  min-width: 178px;
+}
+
+.tableActions select {
+  height: 34px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.tableActions > span {
   display: inline-flex;
   align-items: center;
   gap: 7px;

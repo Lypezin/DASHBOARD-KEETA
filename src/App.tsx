@@ -705,6 +705,15 @@ function Metric({ title, value, hint, strong, tooltip }: { title: string; value:
 }
 
 function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; isSingleDayView: boolean }) {
+  const [hoursSort, setHoursSort] = useState<'desc' | 'asc'>('desc')
+
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      const diff = a.delivered_hours - b.delivered_hours
+      return hoursSort === 'asc' ? diff : -diff
+    })
+  }, [hoursSort, rows])
+
   return (
     <section className="panel tablePanel">
       <div className="tableTitle">
@@ -712,7 +721,15 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           <p className="eyebrow">{isSingleDayView ? 'Visao diaria' : 'Consolidado por entregador'}</p>
           <h2>Entregadores</h2>
         </div>
-        <span><Clock3 size={14} /> {isSingleDayView ? 'Detalhes do dia' : 'Consolidado no período'}</span>
+        <div className="tableActions">
+          <label>Ordenar horas
+            <select value={hoursSort} onChange={(event) => setHoursSort(event.target.value as 'desc' | 'asc')}>
+              <option value="desc">Maior para menor</option>
+              <option value="asc">Menor para maior</option>
+            </select>
+          </label>
+          <span><Clock3 size={14} /> {isSingleDayView ? 'Detalhes do dia' : 'Consolidado no período'}</span>
+        </div>
       </div>
       <div className="tableWrap">
         <table>
@@ -729,7 +746,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={row.key}>
                 <td>{row.dateLabel}</td>
                 <td>{row.courier_id_txt}</td>
