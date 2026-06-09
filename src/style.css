@@ -1,0 +1,426 @@
+:root {
+  --keeta-yellow: #ffcc00;
+  --ink: #141414;
+  --graphite: #242424;
+  --muted: #6e6a5f;
+  --line: #ded9c8;
+  --paper: #fffdf3;
+  --surface: #ffffff;
+  --success: #2e7d32;
+  --danger: #d9422f;
+  --shadow: 0 16px 40px rgba(20, 20, 20, 0.08);
+  font-family: Avenir Next, Aptos, Segoe UI, sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(255, 204, 0, 0.16) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 204, 0, 0.12) 1px, transparent 1px),
+    var(--paper);
+  background-size: 36px 36px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 22px;
+  background: var(--ink);
+  color: #fff9dc;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.brandMark {
+  width: 100%;
+  height: 74px;
+  display: grid;
+  place-items: center;
+  background: var(--keeta-yellow);
+  color: var(--ink);
+  border-radius: 8px;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.nav button,
+.iconButton,
+.primary,
+.fileDrop {
+  border: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.nav button {
+  justify-content: flex-start;
+  padding: 12px 13px;
+  color: #fff9dc;
+  background: transparent;
+}
+
+.nav button.active,
+.nav button:hover {
+  background: rgba(255, 204, 0, 0.16);
+  color: var(--keeta-yellow);
+}
+
+.connection {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #d8d0ab;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--danger);
+}
+
+.dot.ok {
+  background: var(--success);
+}
+
+.content {
+  min-width: 0;
+  padding: 26px;
+}
+
+.topbar {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 3px solid var(--ink);
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+h2 {
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.iconButton {
+  width: 42px;
+  height: 42px;
+  background: var(--keeta-yellow);
+  color: var(--ink);
+}
+
+.notice {
+  margin: 18px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 8px solid var(--keeta-yellow);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 14px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(145px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+label svg {
+  vertical-align: middle;
+}
+
+input,
+select {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--ink);
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.35);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric,
+.panel,
+.importBox {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.metric {
+  min-height: 132px;
+  padding: 17px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.metric span,
+.metric small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.metric.strong {
+  background: var(--keeta-yellow);
+  border-color: var(--ink);
+}
+
+.charts,
+.adminGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.6fr);
+  gap: 16px;
+}
+
+.panel {
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.panel.wide {
+  min-width: 0;
+}
+
+.tablePanel {
+  margin-top: 16px;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--ink);
+  color: var(--keeta-yellow);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.importBox {
+  min-height: 420px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 38px;
+}
+
+.importBox p {
+  max-width: 680px;
+  color: var(--muted);
+}
+
+.fileDrop {
+  min-height: 48px;
+  padding: 0 18px;
+  background: var(--keeta-yellow);
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.fileDrop input {
+  display: none;
+}
+
+.primary {
+  height: 42px;
+  width: 100%;
+  background: var(--ink);
+  color: var(--keeta-yellow);
+  font-weight: 900;
+}
+
+.adminGrid .panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 14px;
+  }
+
+  .brandMark {
+    width: 138px;
+    height: 48px;
+    font-size: 22px;
+  }
+
+  .nav {
+    grid-auto-flow: column;
+    overflow: auto;
+  }
+
+  .connection {
+    margin: 0 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .filters,
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .charts,
+  .adminGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .content {
+    padding: 16px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  h1 {
+    font-size: 25px;
+  }
+
+  .sidebar {
+    display: grid;
+  }
+
+  .nav {
+    grid-auto-flow: row;
+  }
+
+  .connection {
+    margin: 0;
+  }
+
+  .filters,
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+}
