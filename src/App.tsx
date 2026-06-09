@@ -146,6 +146,13 @@ function formatShortDate(value: string) {
   return `${day}/${month}/${year.slice(2)}`
 }
 
+function formatDisplayDate(value: string) {
+  if (!value || value === '-') return '-'
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return value
+  return `${day}/${month}/${year}`
+}
+
 export function App() {
   const [rows, setRows] = useState<DeliveryRow[]>([])
   const [targets, setTargets] = useState<DailyTarget[]>([])
@@ -326,7 +333,7 @@ export function App() {
     if (isSingleDayView) {
       return filteredRows.map<DeliveryTableRow>((row) => ({
         key: row.id,
-        dateLabel: row.delivery_date ?? '-',
+        dateLabel: formatDisplayDate(row.delivery_date ?? '-'),
         courier_id_txt: row.courier_id_txt,
         conc: row.conc,
         turno: row.turno,
@@ -386,7 +393,7 @@ export function App() {
       const lastDate = dates[dates.length - 1] ?? firstDate
       return {
         key,
-        dateLabel: firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`,
+        dateLabel: firstDate === lastDate ? formatDisplayDate(firstDate) : `${formatDisplayDate(firstDate)} - ${formatDisplayDate(lastDate)}`,
         courier_id_txt: item.courier_id_txt,
         conc: item.conc,
         turno: singleOrMultiple(item.turnos),
