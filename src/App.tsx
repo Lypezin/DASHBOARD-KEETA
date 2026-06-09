@@ -45,9 +45,18 @@ function firstWeekStart(year: number) {
 }
 
 function getWeekInfo(date = new Date()) {
-  const year = date.getFullYear()
+  const weekStart = mondayOf(date)
+  const calendarYear = weekStart.getFullYear()
+  let year = calendarYear
+
+  if (weekStart >= firstWeekStart(calendarYear + 1)) {
+    year = calendarYear + 1
+  } else if (weekStart < firstWeekStart(calendarYear)) {
+    year = calendarYear - 1
+  }
+
   const start = firstWeekStart(year)
-  const weekNumber = Math.floor((mondayOf(date).getTime() - start.getTime()) / 604800000) + 1
+  const weekNumber = Math.floor((weekStart.getTime() - start.getTime()) / 604800000) + 1
   return { year, weekNumber: Math.max(1, weekNumber) }
 }
 
@@ -88,6 +97,15 @@ type DeliveryTableRow = {
   sourceRows: number
 }
 
+type AvailableWeek = {
+  key: string
+  year: number
+  weekNumber: number
+  startDate: string
+  endDate: string
+  label: string
+}
+
 function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: digits,
@@ -123,6 +141,11 @@ function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
   return Array.from(new Set(rows.map((row) => String(row[key] ?? '').trim()).filter(Boolean))).sort()
 }
 
+function formatShortDate(value: string) {
+  const [year, month, day] = value.split('-')
+  return `${day}/${month}/${year.slice(2)}`
+}
+
 export function App() {
   const [rows, setRows] = useState<DeliveryRow[]>([])
   const [targets, setTargets] = useState<DailyTarget[]>([])
@@ -130,6 +153,7 @@ export function App() {
   const [filters, setFilters] = useState<Filters>(emptyFilters)
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
+  const [monthFillValue, setMonthFillValue] = useState('')
   const [status, setStatus] = useState('Pronto para carregar dados.')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
@@ -161,6 +185,43 @@ export function App() {
     )
     setMonthTargets(nextTargets)
   }, [adminMonth, targets])
+
+  const availableWeeks = useMemo<AvailableWeek[]>(() => {
+    const weeks = new Map<string, AvailableWeek>()
+
+    for (const row of rows) {
+      if (!row.delivery_date) continue
+      const [year, month, day] = row.delivery_date.split('-').map(Number)
+      const week = getWeekInfo(new Date(year, month - 1, day))
+      const range = getWeekRange(week.year, week.weekNumber)
+      const key = `${week.year}-${String(week.weekNumber).padStart(2, '0')}`
+
+      weeks.set(key, {
+        key,
+        year: week.year,
+        weekNumber: week.weekNumber,
+        startDate: range.startDate,
+        endDate: range.endDate,
+        label: `Semana ${week.weekNumber} de ${week.year} · ${formatShortDate(range.startDate)} a ${formatShortDate(range.endDate)}`,
+      })
+    }
+
+    return Array.from(weeks.values()).sort((a, b) => b.startDate.localeCompare(a.startDate))
+  }, [rows])
+
+  useEffect(() => {
+    if (availableWeeks.length === 0) return
+    const currentKey = `${filters.weekYear}-${String(filters.weekNumber).padStart(2, '0')}`
+    const hasCurrentWeek = availableWeeks.some((week) => week.key === currentKey)
+    if (!hasCurrentWeek) {
+      const latest = availableWeeks[0]
+      setFilters((current) => ({
+        ...current,
+        weekYear: String(latest.year),
+        weekNumber: String(latest.weekNumber),
+      }))
+    }
+  }, [availableWeeks, filters.weekNumber, filters.weekYear])
 
   const effectiveRange = useMemo(() => {
     const hasInterval = Boolean(filters.startDate || filters.endDate)
@@ -246,6 +307,18 @@ export function App() {
     for (const row of filteredRows) grouped.set(row.modal || 'Sem modal', (grouped.get(row.modal || 'Sem modal') ?? 0) + row.delivered_hours)
     return Array.from(grouped, ([name, value]) => ({ name, value }))
   }, [filteredRows])
+
+  const targetComparison = useMemo(() => {
+    const delivered = summary.delivered
+    const target = summary.targetTotal
+    const remaining = Math.max(target - delivered, 0)
+    return {
+      delivered,
+      target,
+      remaining,
+      adherence: target > 0 ? (delivered / target) * 100 : 0,
+    }
+  }, [summary.delivered, summary.targetTotal])
 
   const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
 
@@ -426,11 +499,18 @@ export function App() {
         {activeTab === 'dashboard' && (
           <>
             <section className="filters">
-              <label><CalendarRange size={15} /> Semana <TooltipHint text="A semana sempre vai de segunda a domingo. Se preencher Inicio ou Fim, o intervalo manual assume o filtro." />
-                <div className="weekPair">
-                  <input type="number" min="2025" max="2035" value={filters.weekYear} onChange={(event) => setFilters({ ...filters, weekYear: event.target.value })} />
-                  <input type="number" min="1" max="54" value={filters.weekNumber} onChange={(event) => setFilters({ ...filters, weekNumber: event.target.value })} />
-                </div>
+              <label><CalendarRange size={15} /> Semana <TooltipHint text="Mostra apenas semanas com dados importados. Se preencher Inicio ou Fim, o intervalo manual assume o filtro." />
+                <select
+                  value={`${filters.weekYear}-${String(filters.weekNumber).padStart(2, '0')}`}
+                  onChange={(event) => {
+                    const selected = availableWeeks.find((week) => week.key === event.target.value)
+                    if (!selected) return
+                    setFilters({ ...filters, weekYear: String(selected.year), weekNumber: String(selected.weekNumber) })
+                  }}
+                >
+                  {availableWeeks.length === 0 && <option value={`${filters.weekYear}-${String(filters.weekNumber).padStart(2, '0')}`}>Sem semanas importadas</option>}
+                  {availableWeeks.map((week) => <option key={week.key} value={week.key}>{week.label}</option>)}
+                </select>
               </label>
               <label><CalendarDays size={15} /> Inicio <TooltipHint text="Use junto com Fim para analisar um intervalo especifico." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
               <label><CalendarDays size={15} /> Fim <TooltipHint text="Quando Inicio e Fim forem o mesmo dia, a tabela mostra cada escala diaria." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
@@ -449,7 +529,7 @@ export function App() {
             </section>
 
             <Suspense fallback={<section className="panel chartLoading">Carregando graficos...</section>}>
-              <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} />
+              <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} targetComparison={targetComparison} />
             </Suspense>
 
             <DeliveryTable rows={deliveryTableRows} isSingleDayView={isSingleDayView} />
@@ -477,6 +557,11 @@ export function App() {
               <span><CheckCircle2 size={16} /> Preserva a planilha original no payload bruto</span>
               <span><CheckCircle2 size={16} /> Recarrega KPIs e filtros ao concluir</span>
             </div>
+            <div className="importFields">
+              {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
+                <span key={field}>{field}</span>
+              ))}
+            </div>
           </section>
         )}
 
@@ -499,6 +584,19 @@ export function App() {
                   <span>Dias configurados</span>
                   <strong>{Object.values(monthTargets).filter((value) => Number(value) > 0).length}</strong>
                 </div>
+              </div>
+              <div className="adminTools">
+                <label>Preencher dias<input type="number" min="0" step="0.25" value={monthFillValue} placeholder="Horas por dia" onChange={(event) => setMonthFillValue(event.target.value)} /></label>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => {
+                    const nextTargets = Object.fromEntries(adminDays.map((day) => [day.iso, monthFillValue || '0']))
+                    setMonthTargets(nextTargets)
+                  }}
+                >
+                  Aplicar ao mes
+                </button>
               </div>
               <div className="monthTargets">
                 {adminDays.map((day) => (

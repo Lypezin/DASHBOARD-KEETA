@@ -6,7 +6,7 @@
   --muted: #746d5a;
   --line: rgba(34, 28, 12, 0.12);
   --paper: #fbf7e8;
-  --surface: rgba(255, 255, 255, 0.88);
+  --surface: rgba(255, 254, 247, 0.92);
   --surface-solid: #fffdf6;
   --green: #1f8a4c;
   --red: #d84a32;
@@ -16,8 +16,8 @@
   font-family: Avenir Next, Aptos, Segoe UI, sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at 20% 10%, rgba(255, 204, 0, 0.28), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 246, 200, 0.52)),
+    linear-gradient(180deg, rgba(255, 204, 0, 0.12), transparent 280px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.90), rgba(255, 246, 200, 0.42)),
     var(--paper);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -90,6 +90,7 @@ button:disabled {
 .nav button,
 .iconButton,
 .primary,
+.secondary,
 .fileDrop {
   border: 0;
   border-radius: 8px;
@@ -215,7 +216,7 @@ h2 {
 
 .filters {
   display: grid;
-  grid-template-columns: 1.35fr repeat(6, minmax(130px, 1fr));
+  grid-template-columns: minmax(300px, 1.55fr) repeat(6, minmax(130px, 1fr));
   gap: 11px;
   margin-bottom: 18px;
 }
@@ -323,6 +324,73 @@ select:focus {
   border-radius: 8px;
   padding: 18px;
   transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.chartPanel {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.chartPanel h2 {
+  font-size: 17px;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+}
+
+.chartHeader > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--keeta-yellow);
+  font-size: 13px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.chartTooltip {
+  min-width: 168px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 204, 0, 0.32);
+  border-radius: 8px;
+  background: rgba(21, 18, 10, 0.96);
+  color: #fff8d8;
+  box-shadow: var(--shadow-lift);
+}
+
+.chartTooltip strong {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--keeta-yellow);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.chartTooltip span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.chartTooltip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: 0 0 auto;
 }
 
 .chartLoading {
@@ -561,6 +629,25 @@ td small {
   flex: 0 0 auto;
 }
 
+.importFields {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.importFields span {
+  padding: 7px 10px;
+  border: 1px solid rgba(21, 18, 10, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .primary {
   height: 44px;
   width: 100%;
@@ -570,9 +657,25 @@ td small {
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
-.primary:hover {
+.secondary {
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(21, 18, 10, 0.16);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  font-weight: 900;
+  white-space: nowrap;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.primary:hover,
+.secondary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lift);
+}
+
+.secondary:hover {
+  border-color: rgba(21, 18, 10, 0.34);
 }
 
 .adminGrid {
@@ -600,6 +703,18 @@ td small {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+}
+
+.adminTools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .adminSummary div {
@@ -816,7 +931,8 @@ td small {
 
   .filters,
   .kpis,
-  .importChecklist {
+  .importChecklist,
+  .adminTools {
     grid-template-columns: 1fr;
   }
 
