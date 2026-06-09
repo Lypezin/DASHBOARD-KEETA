@@ -275,6 +275,15 @@ select:focus {
   padding: 18px;
 }
 
+.chartLoading {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .panel.wide {
   min-width: 0;
 }

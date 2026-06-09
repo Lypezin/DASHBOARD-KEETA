@@ -1,18 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
   CalendarDays,
   Database,
@@ -27,7 +13,6 @@ import {
 import clsx from 'clsx'
 import { format } from 'date-fns'
 import { fetchDashboardData, importDeliveryRows, isSupabaseConfigured, upsertDailyTarget, upsertShiftConfig } from './supabase'
-import { parseWorkbook } from './importer'
 import type { DailyTarget, DeliveryRow, Filters, ShiftConfig } from './types'
 
 const defaultShifts: ShiftConfig[] = [
@@ -47,6 +32,7 @@ const emptyFilters: Filters = {
 }
 
 const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
+const DashboardCharts = lazy(() => import('./Charts').then((module) => ({ default: module.DashboardCharts })))
 
 function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat('pt-BR', {
@@ -57,14 +43,6 @@ function formatNumber(value: number, digits = 0) {
 
 function formatPercent(value: number) {
   return `${formatNumber(value, 1)}%`
-}
-
-function chartNumber(value: unknown) {
-  return formatNumber(Number(value ?? 0), 1)
-}
-
-function chartPercent(value: unknown) {
-  return formatPercent(Number(value ?? 0))
 }
 
 function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
@@ -172,6 +150,7 @@ export function App() {
     if (!file) return
     setLoading(true)
     try {
+      const { parseWorkbook } = await import('./importer')
       const parsed = await parseWorkbook(file)
       const batchId = await importDeliveryRows(file.name, parsed)
       setStatus(`Importacao concluida: ${parsed.length} linhas no lote ${batchId}.`)
@@ -263,44 +242,9 @@ export function App() {
               <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="IDs unicos" />
             </section>
 
-            <section className="charts">
-              <div className="panel wide">
-                <h2>Horas por turno</h2>
-                <ResponsiveContainer width="100%" height={310}>
-                  <BarChart data={byTurno}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="turno" />
-                    <YAxis />
-                    <Tooltip formatter={chartNumber} />
-                    <Bar dataKey="target" name="A entregar" fill="#141414" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="delivered" name="Entregues" fill="#ffcc00" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="panel">
-                <h2>Modal</h2>
-                <ResponsiveContainer width="100%" height={310}>
-                  <PieChart>
-                    <Pie data={byModal} dataKey="value" nameKey="name" innerRadius={64} outerRadius={104}>
-                      {byModal.map((entry, index) => <Cell key={entry.name} fill={modalColors[index % modalColors.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={chartNumber} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="panel wide">
-                <h2>Aderencia online por turno</h2>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={byTurno}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="turno" />
-                    <YAxis />
-                    <Tooltip formatter={chartPercent} />
-                    <Area dataKey="online" name="%OnlineTime" fill="#ffcc00" stroke="#141414" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+            <Suspense fallback={<section className="panel chartLoading">Carregando graficos...</section>}>
+              <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} />
+            </Suspense>
 
             <DeliveryTable rows={filteredRows} />
           </>
@@ -312,7 +256,7 @@ export function App() {
             <h2>Importar planilha operacional</h2>
             <p>Colunas esperadas: Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e target hours.</p>
             <label className="fileDrop">
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
+              <input type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
               <Upload size={20} /> Selecionar planilha
             </label>
           </section>

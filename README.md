@@ -2,6 +2,8 @@
 
 Dashboard operacional para importar planilhas de entregadores e comparar horas entregues contra metas.
 
+Formatos de importacao aceitos: `.xlsx` e `.csv`.
+
 ## Regras implementadas
 
 - `TURNO`: coluna `Turno`
@@ -28,6 +30,12 @@ supabase/migrations/20260609162000_keeta_dashboard.sql
 ```
 
 Depois disso, a dashboard consegue carregar dados, salvar metas, configurar turnos e importar planilhas.
+
+Tambem da para aplicar as migrations via terminal usando uma connection string Postgres:
+
+```bash
+DATABASE_URL="postgresql://postgres:SENHA@HOST:5432/postgres" npm run db:apply
+```
 
 ## Admin
 

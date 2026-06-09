@@ -1,4 +1,5 @@
-import * as XLSX from 'xlsx'
+import Papa from 'papaparse'
+import { readSheet } from 'read-excel-file/browser'
 import type { ParsedImportRow } from './types'
 
 const columnAliases = {
@@ -25,6 +26,20 @@ function findValue(row: Record<string, unknown>, aliases: string[]) {
   return null
 }
 
+function rowsFromMatrix(matrix: unknown[][]) {
+  if (matrix.length === 0) return []
+
+  const [headers, ...body] = matrix
+  const normalizedHeaders = headers.map((header) => text(header))
+
+  return body.map((values) => {
+    return normalizedHeaders.reduce<Record<string, unknown>>((record, header, index) => {
+      if (header) record[header] = values[index] ?? null
+      return record
+    }, {})
+  })
+}
+
 function text(value: unknown) {
   return String(value ?? '').trim()
 }
@@ -45,12 +60,6 @@ function excelDateToIso(value: unknown) {
   if (!value) return null
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10)
 
-  if (typeof value === 'number') {
-    const parsed = XLSX.SSF.parse_date_code(value)
-    if (!parsed) return null
-    return `${parsed.y}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`
-  }
-
   const raw = text(value)
   if (!raw) return null
 
@@ -65,10 +74,28 @@ function excelDateToIso(value: unknown) {
 }
 
 export async function parseWorkbook(file: File): Promise<ParsedImportRow[]> {
-  const buffer = await file.arrayBuffer()
-  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true })
-  const sheet = workbook.Sheets[workbook.SheetNames[0]]
-  const jsonRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null })
+  const extension = file.name.split('.').pop()?.toLowerCase()
+  let jsonRows: Record<string, unknown>[] = []
+
+  if (extension === 'csv') {
+    const textContent = await file.text()
+    const parsed = Papa.parse<Record<string, unknown>>(textContent, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: true,
+    })
+
+    if (parsed.errors.length) {
+      throw new Error(`Erro ao ler CSV: ${parsed.errors[0].message}`)
+    }
+
+    jsonRows = parsed.data
+  } else if (extension === 'xlsx') {
+    const matrix = await readSheet(file)
+    jsonRows = rowsFromMatrix(matrix)
+  } else {
+    throw new Error('Formato nao suportado. Salve a planilha como .xlsx ou .csv.')
+  }
 
   return jsonRows
     .map((row, index) => {
