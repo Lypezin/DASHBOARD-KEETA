@@ -8,6 +8,7 @@ export type DeliveryRow = {
   courier_id_txt: string
   modal: string
   target_hours_value: number
+  total_hours_scheduled_value: number
   delivered_hours: number
   imported_at: string
 }

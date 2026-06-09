@@ -10,6 +10,7 @@ const columnAliases = {
   modal: ['modal'],
   turno: ['turno'],
   targetHours: ['target hours', 'target_hours', 'targethours'],
+  totalHoursScheduled: ['total_hours_scheduled', 'total hours scheduled', 'totalhoursscheduled'],
   date: ['data', 'date', 'delivery_date', 'dt', 'dia'],
 }
 
@@ -100,6 +101,7 @@ export async function parseWorkbook(file: File): Promise<ParsedImportRow[]> {
   return jsonRows
     .map((row, index) => {
       const targetHours = numberValue(findValue(row, columnAliases.targetHours))
+      const totalHoursScheduled = numberValue(findValue(row, columnAliases.totalHoursScheduled))
       return {
         source_row_number: index + 2,
         delivery_date: excelDateToIso(findValue(row, columnAliases.date)),
@@ -110,7 +112,8 @@ export async function parseWorkbook(file: File): Promise<ParsedImportRow[]> {
         courier_id_txt: text(findValue(row, columnAliases.courierId)),
         modal: text(findValue(row, columnAliases.modal)),
         target_hours_value: targetHours,
-        delivered_hours: targetHours / 24,
+        total_hours_scheduled_value: totalHoursScheduled,
+        delivered_hours: totalHoursScheduled,
         raw_payload: row,
       }
     })

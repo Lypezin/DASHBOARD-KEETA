@@ -11,4 +11,4 @@ Essa migration cria:
 - indices para data, turno, modal, UTR e busca por nome
 - RPCs `keeta_dashboard_summary` e `keeta_target_vs_delivered`
 
-A coluna `delivered_hours` e gerada no banco como `target_hours_value / 24.0`, seguindo a regra da dashboard.
+A coluna `delivered_hours` e gerada no banco a partir de `total_hours_scheduled_value`, seguindo a regra atual da dashboard.

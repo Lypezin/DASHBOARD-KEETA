@@ -84,6 +84,14 @@ function formatPercent(value: number) {
   return `${formatNumber(value, 1)}%`
 }
 
+function formatDurationHours(value: number) {
+  const totalSeconds = Math.round((value || 0) * 3600)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
 function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
   return Array.from(new Set(rows.map((row) => String(row[key] ?? '').trim()).filter(Boolean))).sort()
 }
@@ -323,7 +331,7 @@ export function App() {
             </section>
 
             <section className="kpis">
-              <Metric title="Horas entregues" value={formatNumber(summary.delivered, 1)} hint="target hours / 24" />
+              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="total_hours_scheduled" />
               <Metric title="Horas a entregar" value={formatNumber(summary.targetTotal, 0)} hint="meta admin" />
               <Metric title="Aderencia meta" value={formatPercent(summary.targetAdherence)} hint="entregues / meta" strong />
               <Metric title="OnlineTime medio" value={formatPercent(summary.avgOnline)} hint="%OnlineTime" />
@@ -345,7 +353,7 @@ export function App() {
               <div>
                 <p className="eyebrow">Atualizacao operacional</p>
                 <h2>Importar planilha de entregadores</h2>
-                <p>Arquivos `.xlsx` ou `.csv` com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e target hours.</p>
+                <p>Arquivos `.xlsx` ou `.csv` com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
               </div>
             </div>
             <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
@@ -428,11 +436,11 @@ function DeliveryTable({ rows }: { rows: DeliveryRow[] }) {
           <thead>
             <tr>
               <th>Data</th>
+              <th>ID</th>
+              <th>Nome</th>
               <th>Turno</th>
               <th>Aderencia</th>
               <th>UTR</th>
-              <th>Nome</th>
-              <th>ID</th>
               <th>Modal</th>
               <th>Horas entregues</th>
             </tr>
@@ -441,13 +449,13 @@ function DeliveryTable({ rows }: { rows: DeliveryRow[] }) {
             {rows.map((row) => (
               <tr key={row.id}>
                 <td>{row.delivery_date ?? '-'}</td>
+                <td>{row.courier_id_txt}</td>
+                <td>{row.conc}</td>
                 <td>{row.turno}</td>
                 <td>{formatPercent(row.online_time_pct)}</td>
                 <td>{row.utr ?? '-'}</td>
-                <td>{row.conc}</td>
-                <td>{row.courier_id_txt}</td>
                 <td>{row.modal}</td>
-                <td>{formatNumber(row.delivered_hours, 2)}</td>
+                <td>{formatDurationHours(row.delivered_hours)}</td>
               </tr>
             ))}
           </tbody>

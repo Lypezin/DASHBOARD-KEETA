@@ -12,7 +12,7 @@ Formatos de importacao aceitos: `.xlsx` e `.csv`.
 - `NOME`: coluna `Conc`
 - `ID`: coluna `courier_id_txt`
 - `MODAL`: coluna `modal`
-- `HORAS ENTREGUES`: coluna `target hours` dividida por `24`
+- `HORAS ENTREGUES`: coluna `total_hours_scheduled`
 
 ## Rodar localmente
 
