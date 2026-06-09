@@ -3,9 +3,11 @@ import {
   CalendarDays,
   CalendarRange,
   CheckCircle2,
+  Clock3,
   Database,
   FileSpreadsheet,
   Filter,
+  Info,
   LoaderCircle,
   RefreshCw,
   Save,
@@ -73,6 +75,19 @@ const emptyFilters: Filters = {
 const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
 const DashboardCharts = lazy(() => import('./Charts').then((module) => ({ default: module.DashboardCharts })))
 
+type DeliveryTableRow = {
+  key: string
+  dateLabel: string
+  courier_id_txt: string
+  conc: string
+  turno: string
+  online_time_pct: number
+  utr: number | null
+  modal: string
+  delivered_hours: number
+  sourceRows: number
+}
+
 function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: digits,
@@ -90,6 +105,18 @@ function formatDurationHours(value: number) {
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
   return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatDecimal(value: number | null, digits = 2) {
+  if (value === null || Number.isNaN(value)) return '-'
+  return formatNumber(value, digits)
+}
+
+function singleOrMultiple(values: Set<string>) {
+  const cleanValues = Array.from(values).filter(Boolean)
+  if (cleanValues.length === 0) return '-'
+  if (cleanValues.length === 1) return cleanValues[0]
+  return 'Multiplos'
 }
 
 function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
@@ -220,6 +247,85 @@ export function App() {
     return Array.from(grouped, ([name, value]) => ({ name, value }))
   }, [filteredRows])
 
+  const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
+
+  const deliveryTableRows = useMemo(() => {
+    if (isSingleDayView) {
+      return filteredRows.map<DeliveryTableRow>((row) => ({
+        key: row.id,
+        dateLabel: row.delivery_date ?? '-',
+        courier_id_txt: row.courier_id_txt,
+        conc: row.conc,
+        turno: row.turno,
+        online_time_pct: Number(row.online_time_pct || 0),
+        utr: row.utr === null ? null : Number(row.utr),
+        modal: row.modal,
+        delivered_hours: Number(row.delivered_hours || 0),
+        sourceRows: 1,
+      }))
+    }
+
+    const grouped = new Map<string, {
+      courier_id_txt: string
+      conc: string
+      dates: string[]
+      turnos: Set<string>
+      modals: Set<string>
+      delivered_hours: number
+      onlineSum: number
+      utrSum: number
+      utrCount: number
+      sourceRows: number
+    }>()
+
+    for (const row of filteredRows) {
+      const key = row.courier_id_txt || row.conc
+      const item = grouped.get(key) ?? {
+        courier_id_txt: row.courier_id_txt,
+        conc: row.conc,
+        dates: [],
+        turnos: new Set<string>(),
+        modals: new Set<string>(),
+        delivered_hours: 0,
+        onlineSum: 0,
+        utrSum: 0,
+        utrCount: 0,
+        sourceRows: 0,
+      }
+
+      if (row.delivery_date) item.dates.push(row.delivery_date)
+      item.turnos.add(row.turno)
+      item.modals.add(row.modal)
+      item.delivered_hours += Number(row.delivered_hours || 0)
+      item.onlineSum += Number(row.online_time_pct || 0)
+      const utr = row.utr === null ? Number.NaN : Number(row.utr)
+      if (Number.isFinite(utr)) {
+        item.utrSum += utr
+        item.utrCount += 1
+      }
+      item.sourceRows += 1
+      grouped.set(key, item)
+    }
+
+    return Array.from(grouped.entries()).map<DeliveryTableRow>(([key, item]) => {
+      const dates = item.dates.sort()
+      const firstDate = dates[0] ?? '-'
+      const lastDate = dates[dates.length - 1] ?? firstDate
+      return {
+        key,
+        dateLabel: firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`,
+        courier_id_txt: item.courier_id_txt,
+        conc: item.conc,
+        turno: singleOrMultiple(item.turnos),
+        online_time_pct: item.sourceRows ? item.onlineSum / item.sourceRows : 0,
+        utr: item.utrCount ? item.utrSum / item.utrCount : null,
+        modal: singleOrMultiple(item.modals),
+        delivered_hours: item.delivered_hours,
+        sourceRows: item.sourceRows,
+      }
+    }).sort((a, b) => b.delivered_hours - a.delivered_hours)
+  }, [filteredRows, isSingleDayView])
+
   async function handleImport(file: File | null) {
     if (!file) return
     setLoading(true)
@@ -249,6 +355,10 @@ export function App() {
       }
     })
   }, [adminMonth])
+
+  const adminMonthTotal = useMemo(() => {
+    return adminDays.reduce((sum, day) => sum + Number(monthTargets[day.iso] || 0), 0)
+  }, [adminDays, monthTargets])
 
   async function saveMonthTargets() {
     setLoading(true)
@@ -316,14 +426,14 @@ export function App() {
         {activeTab === 'dashboard' && (
           <>
             <section className="filters">
-              <label><CalendarRange size={15} /> Semana
+              <label><CalendarRange size={15} /> Semana <TooltipHint text="A semana sempre vai de segunda a domingo. Se preencher Inicio ou Fim, o intervalo manual assume o filtro." />
                 <div className="weekPair">
                   <input type="number" min="2025" max="2035" value={filters.weekYear} onChange={(event) => setFilters({ ...filters, weekYear: event.target.value })} />
                   <input type="number" min="1" max="54" value={filters.weekNumber} onChange={(event) => setFilters({ ...filters, weekNumber: event.target.value })} />
                 </div>
               </label>
-              <label><CalendarDays size={15} /> Inicio<input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
-              <label><CalendarDays size={15} /> Fim<input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
+              <label><CalendarDays size={15} /> Inicio <TooltipHint text="Use junto com Fim para analisar um intervalo especifico." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
+              <label><CalendarDays size={15} /> Fim <TooltipHint text="Quando Inicio e Fim forem o mesmo dia, a tabela mostra cada escala diaria." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
               <label><Search size={15} /> Nome<input placeholder="Conc" value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
               <label><Filter size={15} /> Turno<select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
               <label>Modal<select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
@@ -331,18 +441,18 @@ export function App() {
             </section>
 
             <section className="kpis">
-              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="total_hours_scheduled" />
-              <Metric title="Horas a entregar" value={formatNumber(summary.targetTotal, 0)} hint="meta admin" />
-              <Metric title="Aderencia meta" value={formatPercent(summary.targetAdherence)} hint="entregues / meta" strong />
-              <Metric title="OnlineTime medio" value={formatPercent(summary.avgOnline)} hint="%OnlineTime" />
-              <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="IDs unicos" />
+              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="total_hours_scheduled" tooltip="Soma de total_hours_scheduled no periodo filtrado." />
+              <Metric title="Horas a entregar" value={formatNumber(summary.targetTotal, 0)} hint="meta admin" tooltip="Soma das metas cadastradas no Admin para o periodo atual." />
+              <Metric title="Aderencia meta" value={formatPercent(summary.targetAdherence)} hint="entregues / meta" strong tooltip="Horas entregues divididas pelas horas planejadas no Admin." />
+              <Metric title="OnlineTime medio" value={formatPercent(summary.avgOnline)} hint="%OnlineTime" tooltip="Media de %OnlineTime nas linhas filtradas." />
+              <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="IDs unicos" tooltip="Quantidade distinta de courier_id_txt no filtro atual." />
             </section>
 
             <Suspense fallback={<section className="panel chartLoading">Carregando graficos...</section>}>
               <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} />
             </Suspense>
 
-            <DeliveryTable rows={filteredRows} />
+            <DeliveryTable rows={deliveryTableRows} isSingleDayView={isSingleDayView} />
           </>
         )}
 
@@ -353,7 +463,7 @@ export function App() {
               <div>
                 <p className="eyebrow">Atualizacao operacional</p>
                 <h2>Importar planilha de entregadores</h2>
-                <p>Arquivos `.xlsx` ou `.csv` com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
+                <p>Arquivos XLSX ou CSV com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
               </div>
             </div>
             <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
@@ -363,9 +473,9 @@ export function App() {
               <span>O arquivo sera normalizado e gravado no Supabase em lotes.</span>
             </label>
             <div className="importChecklist">
-              <span><CheckCircle2 size={16} /> Calcula horas entregues automaticamente</span>
-              <span><CheckCircle2 size={16} /> Mantem payload bruto para auditoria</span>
-              <span><CheckCircle2 size={16} /> Atualiza KPIs ao concluir</span>
+              <span><CheckCircle2 size={16} /> Usa total_hours_scheduled como horas entregues</span>
+              <span><CheckCircle2 size={16} /> Preserva a planilha original no payload bruto</span>
+              <span><CheckCircle2 size={16} /> Recarrega KPIs e filtros ao concluir</span>
             </div>
           </section>
         )}
@@ -379,6 +489,16 @@ export function App() {
                   <h2>Metas de horas por dia</h2>
                 </div>
                 <label>Mes<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
+              </div>
+              <div className="adminSummary">
+                <div>
+                  <span>Meta do mes</span>
+                  <strong>{formatDurationHours(adminMonthTotal)}</strong>
+                </div>
+                <div>
+                  <span>Dias configurados</span>
+                  <strong>{Object.values(monthTargets).filter((value) => Number(value) > 0).length}</strong>
+                </div>
               </div>
               <div className="monthTargets">
                 {adminDays.map((day) => (
@@ -417,20 +537,34 @@ export function App() {
   )
 }
 
-function Metric({ title, value, hint, strong }: { title: string; value: string; hint: string; strong?: boolean }) {
+function TooltipHint({ text }: { text: string }) {
+  return (
+    <span className="tooltipHint" tabIndex={0} data-tooltip={text} aria-label={text}>
+      <Info size={13} />
+    </span>
+  )
+}
+
+function Metric({ title, value, hint, strong, tooltip }: { title: string; value: string; hint: string; strong?: boolean; tooltip: string }) {
   return (
     <article className={clsx('metric', strong && 'strong')}>
-      <span>{title}</span>
+      <span>{title}<TooltipHint text={tooltip} /></span>
       <strong>{value}</strong>
       <small>{hint}</small>
     </article>
   )
 }
 
-function DeliveryTable({ rows }: { rows: DeliveryRow[] }) {
+function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; isSingleDayView: boolean }) {
   return (
     <section className="panel tablePanel">
-      <h2>Entregadores</h2>
+      <div className="tableTitle">
+        <div>
+          <p className="eyebrow">{isSingleDayView ? 'Visao diaria' : 'Consolidado por entregador'}</p>
+          <h2>Entregadores</h2>
+        </div>
+        <span><Clock3 size={14} /> {isSingleDayView ? 'Linhas do dia' : 'Horas somadas no periodo'}</span>
+      </div>
       <div className="tableWrap">
         <table>
           <thead>
@@ -447,15 +581,18 @@ function DeliveryTable({ rows }: { rows: DeliveryRow[] }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id}>
-                <td>{row.delivery_date ?? '-'}</td>
+              <tr key={row.key}>
+                <td>{row.dateLabel}</td>
                 <td>{row.courier_id_txt}</td>
                 <td>{row.conc}</td>
                 <td>{row.turno}</td>
                 <td>{formatPercent(row.online_time_pct)}</td>
-                <td>{row.utr ?? '-'}</td>
+                <td>{formatDecimal(row.utr)}</td>
                 <td>{row.modal}</td>
-                <td>{formatDurationHours(row.delivered_hours)}</td>
+                <td>
+                  <span className="durationCell">{formatDurationHours(row.delivered_hours)}</span>
+                  {!isSingleDayView && <small>{row.sourceRows} linhas</small>}
+                </td>
               </tr>
             ))}
           </tbody>

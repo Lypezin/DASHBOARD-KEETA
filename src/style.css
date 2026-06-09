@@ -296,6 +296,12 @@ select:focus {
   text-transform: uppercase;
 }
 
+.metric span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .metric strong {
   font-size: 34px;
   line-height: 1;
@@ -334,13 +340,58 @@ select:focus {
 
 .tablePanel {
   margin-top: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tableTitle {
+  min-height: 68px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid rgba(21, 18, 10, 0.10);
+  background:
+    linear-gradient(90deg, rgba(255, 204, 0, 0.14), transparent 44%),
+    rgba(255, 255, 255, 0.62);
+}
+
+.tableTitle > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(21, 18, 10, 0.12);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .tableWrap {
   width: 100%;
   max-height: 620px;
   overflow: auto;
-  border-radius: 8px;
+  scrollbar-color: rgba(21, 18, 10, 0.42) rgba(21, 18, 10, 0.06);
+  scrollbar-width: thin;
+}
+
+.tableWrap::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.tableWrap::-webkit-scrollbar-track {
+  background: rgba(21, 18, 10, 0.06);
+}
+
+.tableWrap::-webkit-scrollbar-thumb {
+  background: rgba(21, 18, 10, 0.36);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
 }
 
 table {
@@ -362,10 +413,11 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--ink);
+  background: #171309;
   color: var(--keeta-yellow);
   font-size: 11px;
   text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 tbody tr {
@@ -376,9 +428,24 @@ tbody tr:hover {
   background: rgba(255, 204, 0, 0.12);
 }
 
+.durationCell {
+  display: inline-flex;
+  min-width: 76px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+}
+
+td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .importStage {
   position: relative;
-  min-height: 560px;
+  min-height: 540px;
   border-radius: 8px;
   padding: 34px;
   overflow: hidden;
@@ -390,8 +457,8 @@ tbody tr:hover {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(120deg, rgba(255, 204, 0, 0.18), transparent 34%),
-    repeating-linear-gradient(90deg, rgba(21, 18, 10, 0.04) 0 1px, transparent 1px 34px);
+    linear-gradient(120deg, rgba(255, 204, 0, 0.13), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 250, 226, 0.72));
   pointer-events: none;
 }
 
@@ -427,15 +494,15 @@ tbody tr:hover {
 }
 
 .premiumDrop {
-  min-height: 250px;
+  min-height: 230px;
   display: grid;
   place-items: center;
   align-content: center;
   gap: 10px;
   padding: 26px;
-  border: 1px dashed rgba(21, 18, 10, 0.28);
+  border: 1px dashed rgba(21, 18, 10, 0.30);
   background:
-    linear-gradient(135deg, rgba(255, 204, 0, 0.28), rgba(255, 255, 255, 0.74)),
+    linear-gradient(135deg, rgba(255, 204, 0, 0.20), rgba(255, 255, 255, 0.82)),
     rgba(255, 255, 255, 0.78);
   color: var(--ink);
   text-align: center;
@@ -483,7 +550,7 @@ tbody tr:hover {
   padding: 10px 12px;
   border: 1px solid rgba(21, 18, 10, 0.10);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 800;
@@ -526,6 +593,36 @@ tbody tr:hover {
 
 .panelHeader label {
   width: 190px;
+}
+
+.adminSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.adminSummary div {
+  min-height: 82px;
+  padding: 14px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.16), rgba(255, 255, 255, 0.78));
+  display: grid;
+  align-content: space-between;
+}
+
+.adminSummary span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.adminSummary strong {
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .monthTargets {
@@ -574,6 +671,65 @@ tbody tr:hover {
 .shiftPanel {
   display: grid;
   gap: 14px;
+}
+
+.tooltipHint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(21, 18, 10, 0.06);
+  vertical-align: middle;
+  cursor: help;
+}
+
+.tooltipHint::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  z-index: 20;
+  width: max-content;
+  max-width: 260px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: #fff9df;
+  background: rgba(21, 18, 10, 0.96);
+  box-shadow: var(--shadow-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.tooltipHint::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  z-index: 21;
+  width: 10px;
+  height: 10px;
+  background: rgba(21, 18, 10, 0.96);
+  opacity: 0;
+  transform: translate(-50%, 4px) rotate(45deg);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.tooltipHint:hover::after,
+.tooltipHint:focus-visible::after,
+.tooltipHint:hover::before,
+.tooltipHint:focus-visible::before {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 @keyframes fadeUp {
