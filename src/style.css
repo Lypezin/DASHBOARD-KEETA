@@ -13,7 +13,10 @@
   --blue: #315fbd;
   --shadow-soft: 0 20px 50px rgba(30, 24, 8, 0.10);
   --shadow-lift: 0 26px 70px rgba(30, 24, 8, 0.18);
-  font-family: Avenir Next, Aptos, Segoe UI, sans-serif;
+  --radius: 10px;
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: 'Inter', Avenir Next, Aptos, Segoe UI, sans-serif;
   color: var(--ink);
   background:
     linear-gradient(180deg, rgba(255, 204, 0, 0.12), transparent 280px),
@@ -48,11 +51,15 @@ button:disabled {
   opacity: 0.66;
 }
 
+/* ─── Layout shell ──────────────────────────────── */
+
 .shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
 }
+
+/* ─── Sidebar ───────────────────────────────────── */
 
 .sidebar {
   position: sticky;
@@ -75,16 +82,22 @@ button:disabled {
   place-items: center;
   background: linear-gradient(135deg, var(--keeta-yellow), #ffe375);
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 28px;
   font-weight: 950;
-  letter-spacing: 0;
+  letter-spacing: 0.03em;
   box-shadow: 0 16px 34px rgba(255, 204, 0, 0.22);
+  transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
+}
+
+.brandMark:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 44px rgba(255, 204, 0, 0.30);
 }
 
 .nav {
   display: grid;
-  gap: 9px;
+  gap: 6px;
 }
 
 .nav button,
@@ -93,7 +106,7 @@ button:disabled {
 .secondary,
 .fileDrop {
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +119,9 @@ button:disabled {
   padding: 13px 14px;
   color: #fff6cf;
   background: transparent;
-  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+  font-weight: 600;
+  font-size: 14px;
+  transition: transform 220ms var(--ease-out), background 220ms var(--ease), color 220ms var(--ease);
 }
 
 .nav button::before {
@@ -119,7 +134,7 @@ button:disabled {
   background: var(--keeta-yellow);
   opacity: 0;
   transform: scaleY(0.4);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease-out);
 }
 
 .nav button.active,
@@ -134,6 +149,8 @@ button:disabled {
   transform: scaleY(1);
 }
 
+/* ─── Content ───────────────────────────────────── */
+
 .content {
   min-width: 0;
   padding: 30px;
@@ -146,16 +163,16 @@ button:disabled {
   justify-content: space-between;
   gap: 18px;
   padding: 0 0 20px;
-  border-bottom: 1px solid rgba(21, 18, 10, 0.18);
+  border-bottom: 1px solid rgba(21, 18, 10, 0.12);
 }
 
 .eyebrow {
   margin: 0 0 6px;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.06em;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 h1,
@@ -165,27 +182,31 @@ p {
 }
 
 h1 {
-  font-size: 38px;
-  line-height: 1.02;
-  letter-spacing: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 800;
 }
 
 h2 {
   font-size: 18px;
-  line-height: 1.15;
-  letter-spacing: 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 700;
 }
 
 .rangePill {
   display: inline-flex;
   margin-top: 10px;
-  padding: 7px 10px;
-  border: 1px solid rgba(21, 18, 10, 0.12);
+  padding: 6px 12px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
   border-radius: 999px;
   color: var(--ink-2);
   background: rgba(255, 255, 255, 0.72);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 400ms var(--ease) both;
 }
 
 .iconButton {
@@ -194,40 +215,52 @@ h2 {
   background: var(--ink);
   color: var(--keeta-yellow);
   box-shadow: var(--shadow-soft);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
 
 .iconButton:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) rotate(45deg);
   box-shadow: var(--shadow-lift);
 }
 
+.iconButton:active {
+  transform: translateY(0) rotate(90deg);
+}
+
+/* ─── Notice bar ────────────────────────────────── */
+
 .notice {
   margin: 18px 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(255, 204, 0, 0.42);
-  border-left: 8px solid var(--keeta-yellow);
-  border-radius: 8px;
-  background: rgba(255, 252, 236, 0.82);
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 204, 0, 0.32);
+  border-left: 4px solid var(--keeta-yellow);
+  border-radius: var(--radius);
+  background: rgba(255, 252, 236, 0.72);
   color: var(--ink-2);
-  font-size: 14px;
-  animation: fadeUp 360ms ease both;
+  font-size: 13px;
+  font-weight: 500;
+  animation: fadeUp 360ms var(--ease-out) both;
+  backdrop-filter: blur(8px);
 }
+
+/* ─── Filters ───────────────────────────────────── */
 
 .filters {
   display: grid;
   grid-template-columns: minmax(300px, 1.55fr) repeat(6, minmax(130px, 1fr));
   gap: 11px;
   margin-bottom: 18px;
+  animation: fadeUp 300ms var(--ease-out) 60ms both;
 }
 
 label {
   display: grid;
-  gap: 7px;
+  gap: 6px;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 input,
@@ -235,19 +268,20 @@ select {
   width: 100%;
   height: 42px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0 11px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink);
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  font-weight: 500;
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease), background 200ms var(--ease);
 }
 
 input:focus,
 select:focus {
-  border-color: var(--ink);
+  border-color: var(--keeta-gold);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.26);
+  box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.20);
 }
 
 .weekPair {
@@ -255,6 +289,8 @@ select:focus {
   grid-template-columns: 1fr 0.65fr;
   gap: 7px;
 }
+
+/* ─── KPIs ──────────────────────────────────────── */
 
 .kpis {
   display: grid;
@@ -267,7 +303,7 @@ select:focus {
 .panel,
 .importStage {
   background: var(--surface);
-  border: 1px solid rgba(21, 18, 10, 0.10);
+  border: 1px solid rgba(21, 18, 10, 0.08);
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(14px);
 }
@@ -275,17 +311,22 @@ select:focus {
 .metric {
   min-height: 136px;
   padding: 18px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  animation: fadeUp 420ms ease both;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 280ms var(--ease-out), box-shadow 280ms var(--ease-out);
 }
+
+.metric:nth-child(1) { animation: fadeUp 400ms var(--ease-out) 80ms both; }
+.metric:nth-child(2) { animation: fadeUp 400ms var(--ease-out) 140ms both; }
+.metric:nth-child(3) { animation: fadeUp 400ms var(--ease-out) 200ms both; }
+.metric:nth-child(4) { animation: fadeUp 400ms var(--ease-out) 260ms both; }
+.metric:nth-child(5) { animation: fadeUp 400ms var(--ease-out) 320ms both; }
 
 .metric:hover,
 .panel:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-lift);
 }
 
@@ -293,8 +334,9 @@ select:focus {
 .metric small {
   color: var(--muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .metric span {
@@ -304,14 +346,23 @@ select:focus {
 }
 
 .metric strong {
-  font-size: 34px;
+  font-size: 32px;
   line-height: 1;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .metric.strong {
   background: linear-gradient(135deg, var(--keeta-yellow), #ffe375);
-  border-color: rgba(21, 18, 10, 0.22);
+  border-color: rgba(21, 18, 10, 0.18);
 }
+
+.metric.strong strong {
+  color: var(--ink);
+}
+
+/* ─── Charts ────────────────────────────────────── */
 
 .charts,
 .adminGrid {
@@ -321,9 +372,10 @@ select:focus {
 }
 
 .panel {
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 18px;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 280ms var(--ease-out), box-shadow 280ms var(--ease-out);
+  animation: fadeUp 400ms var(--ease-out) both;
 }
 
 .chartPanel {
@@ -355,18 +407,19 @@ select:focus {
   background: var(--ink);
   color: var(--keeta-yellow);
   font-size: 13px;
-  font-weight: 950;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
 .chartTooltip {
   min-width: 168px;
-  padding: 10px 11px;
-  border: 1px solid rgba(255, 204, 0, 0.32);
-  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 204, 0, 0.24);
+  border-radius: var(--radius);
   background: rgba(21, 18, 10, 0.96);
   color: #fff8d8;
   box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(12px);
 }
 
 .chartTooltip strong {
@@ -374,7 +427,7 @@ select:focus {
   margin-bottom: 7px;
   color: var(--keeta-yellow);
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 800;
 }
 
 .chartTooltip span {
@@ -382,7 +435,7 @@ select:focus {
   align-items: center;
   gap: 7px;
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 600;
   line-height: 1.55;
 }
 
@@ -398,18 +451,22 @@ select:focus {
   display: grid;
   place-items: center;
   color: var(--muted);
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .panel.wide {
   min-width: 0;
 }
 
+/* ─── Table ─────────────────────────────────────── */
+
 .tablePanel {
   margin-top: 16px;
   padding: 0;
   overflow: hidden;
+  animation: fadeUp 400ms var(--ease-out) 200ms both;
 }
 
 .tableTitle {
@@ -419,9 +476,9 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border-bottom: 1px solid rgba(21, 18, 10, 0.10);
+  border-bottom: 1px solid rgba(21, 18, 10, 0.08);
   background:
-    linear-gradient(90deg, rgba(255, 204, 0, 0.14), transparent 44%),
+    linear-gradient(90deg, rgba(255, 204, 0, 0.10), transparent 44%),
     rgba(255, 255, 255, 0.62);
 }
 
@@ -429,13 +486,13 @@ select:focus {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 10px;
-  border: 1px solid rgba(21, 18, 10, 0.12);
+  padding: 6px 12px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
   border-radius: 999px;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.76);
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -443,21 +500,21 @@ select:focus {
   width: 100%;
   max-height: 620px;
   overflow: auto;
-  scrollbar-color: rgba(21, 18, 10, 0.42) rgba(21, 18, 10, 0.06);
+  scrollbar-color: rgba(21, 18, 10, 0.30) rgba(21, 18, 10, 0.04);
   scrollbar-width: thin;
 }
 
 .tableWrap::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 .tableWrap::-webkit-scrollbar-track {
-  background: rgba(21, 18, 10, 0.06);
+  background: rgba(21, 18, 10, 0.04);
 }
 
 .tableWrap::-webkit-scrollbar-thumb {
-  background: rgba(21, 18, 10, 0.36);
+  background: rgba(21, 18, 10, 0.28);
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 999px;
 }
@@ -472,7 +529,7 @@ table {
 th,
 td {
   padding: 12px 11px;
-  border-bottom: 1px solid rgba(21, 18, 10, 0.08);
+  border-bottom: 1px solid rgba(21, 18, 10, 0.06);
   text-align: left;
   white-space: nowrap;
 }
@@ -481,26 +538,27 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #171309;
+  background: var(--ink);
   color: var(--keeta-yellow);
   font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.04em;
 }
 
 tbody tr {
-  transition: background 140ms ease;
+  transition: background 180ms var(--ease);
 }
 
 tbody tr:hover {
-  background: rgba(255, 204, 0, 0.12);
+  background: rgba(255, 204, 0, 0.08);
 }
 
 .durationCell {
   display: inline-flex;
   min-width: 76px;
   font-variant-numeric: tabular-nums;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 td small {
@@ -508,16 +566,18 @@ td small {
   margin-top: 2px;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
 }
+
+/* ─── Import stage ──────────────────────────────── */
 
 .importStage {
   position: relative;
   min-height: 540px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 34px;
   overflow: hidden;
-  animation: fadeUp 420ms ease both;
+  animation: fadeUp 420ms var(--ease-out) both;
 }
 
 .importStage::before {
@@ -525,7 +585,7 @@ td small {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(120deg, rgba(255, 204, 0, 0.13), transparent 34%),
+    linear-gradient(120deg, rgba(255, 204, 0, 0.10), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 250, 226, 0.72));
   pointer-events: none;
 }
@@ -548,17 +608,23 @@ td small {
   margin-top: 8px;
   max-width: 780px;
   color: var(--muted);
+  font-weight: 500;
 }
 
 .importIcon {
   width: 72px;
   height: 72px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   display: grid;
   place-items: center;
   background: var(--ink);
   color: var(--keeta-yellow);
   box-shadow: var(--shadow-soft);
+  transition: transform 300ms var(--ease-out);
+}
+
+.importIcon:hover {
+  transform: rotate(-6deg) scale(1.05);
 }
 
 .premiumDrop {
@@ -568,18 +634,19 @@ td small {
   align-content: center;
   gap: 10px;
   padding: 26px;
-  border: 1px dashed rgba(21, 18, 10, 0.30);
+  border: 1px dashed rgba(21, 18, 10, 0.24);
+  border-radius: var(--radius);
   background:
-    linear-gradient(135deg, rgba(255, 204, 0, 0.20), rgba(255, 255, 255, 0.82)),
+    linear-gradient(135deg, rgba(255, 204, 0, 0.16), rgba(255, 255, 255, 0.82)),
     rgba(255, 255, 255, 0.78);
   color: var(--ink);
   text-align: center;
-  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  transition: transform 280ms var(--ease-out), border-color 280ms var(--ease), box-shadow 280ms var(--ease-out);
 }
 
 .premiumDrop:hover {
   transform: translateY(-4px) scale(1.005);
-  border-color: var(--ink);
+  border-color: var(--keeta-gold);
   box-shadow: var(--shadow-lift);
 }
 
@@ -588,14 +655,15 @@ td small {
 }
 
 .premiumDrop strong {
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .premiumDrop span {
   max-width: 420px;
   color: var(--muted);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 500;
   text-transform: none;
 }
 
@@ -616,12 +684,17 @@ td small {
   gap: 8px;
   min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid rgba(21, 18, 10, 0.10);
-  border-radius: 8px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink-2);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
+  transition: transform 200ms var(--ease-out);
+}
+
+.importChecklist span:hover {
+  transform: translateY(-1px);
 }
 
 .importChecklist svg {
@@ -639,33 +712,41 @@ td small {
 }
 
 .importFields span {
-  padding: 7px 10px;
-  border: 1px solid rgba(21, 18, 10, 0.12);
+  padding: 6px 12px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
   color: var(--ink-2);
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
+  transition: background 200ms var(--ease), transform 200ms var(--ease-out);
 }
+
+.importFields span:hover {
+  background: rgba(255, 204, 0, 0.16);
+  transform: translateY(-1px);
+}
+
+/* ─── Buttons ───────────────────────────────────── */
 
 .primary {
   height: 44px;
   width: 100%;
   background: var(--ink);
   color: var(--keeta-yellow);
-  font-weight: 950;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  font-weight: 700;
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
 
 .secondary {
   height: 42px;
   padding: 0 14px;
-  border: 1px solid rgba(21, 18, 10, 0.16);
+  border: 1px solid rgba(21, 18, 10, 0.14);
   background: rgba(255, 255, 255, 0.86);
   color: var(--ink);
-  font-weight: 900;
+  font-weight: 700;
   white-space: nowrap;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), border-color 220ms var(--ease);
 }
 
 .primary:hover,
@@ -675,8 +756,10 @@ td small {
 }
 
 .secondary:hover {
-  border-color: rgba(21, 18, 10, 0.34);
+  border-color: rgba(21, 18, 10, 0.30);
 }
+
+/* ─── Admin ─────────────────────────────────────── */
 
 .adminGrid {
   align-items: start;
@@ -712,31 +795,38 @@ td small {
   gap: 10px;
   margin-bottom: 16px;
   padding: 12px;
-  border: 1px solid rgba(21, 18, 10, 0.10);
-  border-radius: 8px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.62);
 }
 
 .adminSummary div {
   min-height: 82px;
   padding: 14px;
-  border: 1px solid rgba(21, 18, 10, 0.10);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 204, 0, 0.16), rgba(255, 255, 255, 0.78));
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.12), rgba(255, 255, 255, 0.78));
   display: grid;
   align-content: space-between;
+  transition: transform 200ms var(--ease-out);
+}
+
+.adminSummary div:hover {
+  transform: translateY(-2px);
 }
 
 .adminSummary span {
   color: var(--muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .adminSummary strong {
   font-size: 24px;
   line-height: 1;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
@@ -750,15 +840,16 @@ td small {
 .dayTarget {
   min-height: 92px;
   padding: 10px;
-  border: 1px solid rgba(21, 18, 10, 0.10);
-  border-radius: 8px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.72);
-  transition: transform 160ms ease, border-color 160ms ease;
+  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease), box-shadow 200ms var(--ease-out);
 }
 
 .dayTarget:hover {
   transform: translateY(-2px);
-  border-color: rgba(21, 18, 10, 0.28);
+  border-color: rgba(255, 204, 0, 0.40);
+  box-shadow: 0 8px 20px rgba(30, 24, 8, 0.08);
 }
 
 .dayTarget span {
@@ -770,13 +861,14 @@ td small {
 }
 
 .dayTarget strong {
-  font-size: 19px;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .dayTarget small {
   color: var(--muted);
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .dayTarget input {
@@ -787,6 +879,8 @@ td small {
   display: grid;
   gap: 14px;
 }
+
+/* ─── Tooltips ──────────────────────────────────── */
 
 .tooltipHint {
   position: relative;
@@ -800,6 +894,11 @@ td small {
   background: rgba(21, 18, 10, 0.06);
   vertical-align: middle;
   cursor: help;
+  transition: background 200ms var(--ease);
+}
+
+.tooltipHint:hover {
+  background: rgba(21, 18, 10, 0.12);
 }
 
 .tooltipHint::after {
@@ -810,19 +909,20 @@ td small {
   z-index: 20;
   width: max-content;
   max-width: 260px;
-  padding: 9px 10px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
   color: #fff9df;
   background: rgba(21, 18, 10, 0.96);
   box-shadow: var(--shadow-soft);
   font-size: 12px;
-  font-weight: 700;
-  line-height: 1.35;
+  font-weight: 500;
+  line-height: 1.4;
   text-transform: none;
+  letter-spacing: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 4px);
-  transition: opacity 150ms ease, transform 150ms ease;
+  transform: translate(-50%, 6px);
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease-out);
 }
 
 .tooltipHint::before {
@@ -835,8 +935,8 @@ td small {
   height: 10px;
   background: rgba(21, 18, 10, 0.96);
   opacity: 0;
-  transform: translate(-50%, 4px) rotate(45deg);
-  transition: opacity 150ms ease, transform 150ms ease;
+  transform: translate(-50%, 6px) rotate(45deg);
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease-out);
 }
 
 .tooltipHint:hover::after,
@@ -847,14 +947,30 @@ td small {
   transform: translate(-50%, 0);
 }
 
+.tooltipHint:hover::before,
+.tooltipHint:focus-visible::before {
+  transform: translate(-50%, 0) rotate(45deg);
+}
+
+/* ─── Animations ────────────────────────────────── */
+
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -863,6 +979,8 @@ td small {
     transform: rotate(360deg);
   }
 }
+
+/* ─── Responsive ────────────────────────────────── */
 
 @media (max-width: 1320px) {
   .filters {
@@ -918,7 +1036,7 @@ td small {
   }
 
   h1 {
-    font-size: 27px;
+    font-size: 24px;
   }
 
   .sidebar {
@@ -950,5 +1068,14 @@ td small {
 
   .importHero {
     align-items: flex-start;
+  }
+}
+
+/* ─── Reduced motion ────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

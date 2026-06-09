@@ -161,7 +161,7 @@ export function App() {
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
   const [monthFillValue, setMonthFillValue] = useState('')
-  const [status, setStatus] = useState('Pronto para carregar dados.')
+  const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
 
@@ -172,9 +172,9 @@ export function App() {
       setRows(data.rows)
       setTargets(data.targets)
       setShifts(data.shifts.length ? data.shifts : defaultShifts)
-      setStatus(`Dados atualizados: ${data.rows.length} linhas carregadas.`)
+      setStatus(`${data.rows.length} registros carregados`)
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Falha ao carregar dados.')
+      setStatus(error instanceof Error ? error.message : 'Não foi possível carregar os dados')
     } finally {
       setLoading(false)
     }
@@ -413,11 +413,12 @@ export function App() {
       const { parseWorkbook } = await import('./importer')
       const parsed = await parseWorkbook(file)
       const batchId = await importDeliveryRows(file.name, parsed)
-      setStatus(`Importacao concluida: ${parsed.length} linhas no lote ${batchId}.`)
+      void batchId
+      setStatus(`Importação concluída — ${parsed.length} registros processados`)
       await refreshData()
       setActiveTab('dashboard')
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro na importacao.')
+      setStatus(error instanceof Error ? error.message : 'Erro ao importar arquivo')
     } finally {
       setLoading(false)
     }
@@ -450,10 +451,10 @@ export function App() {
         notes: `meta mensal ${adminMonth}`,
       }))
       await upsertDailyTargets(payload)
-      setStatus(`Metas de ${adminMonth} salvas.`)
+      setStatus(`Metas de ${adminMonth} salvas com sucesso`)
       await refreshData()
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao salvar metas.')
+      setStatus(error instanceof Error ? error.message : 'Erro ao salvar metas')
     } finally {
       setLoading(false)
     }
@@ -463,10 +464,10 @@ export function App() {
     setLoading(true)
     try {
       await upsertShiftConfig(shifts)
-      setStatus('Configuracao de turnos salva.')
+      setStatus('Configuração de turnos salva com sucesso')
       await refreshData()
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao salvar turnos.')
+      setStatus(error instanceof Error ? error.message : 'Erro ao salvar turnos')
     } finally {
       setLoading(false)
     }
@@ -492,21 +493,21 @@ export function App() {
       <section className="content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Operacao KEETA</p>
-            <h1>Aderencia e horas entregues</h1>
-            <span className="rangePill">{effectiveRange.label}: {effectiveRange.startDate || 'inicio'} ate {effectiveRange.endDate || 'hoje'}</span>
+            <p className="eyebrow">Painel operacional</p>
+            <h1>Aderência e horas entregues</h1>
+            <span className="rangePill">{effectiveRange.label} · {effectiveRange.startDate ? formatDisplayDate(effectiveRange.startDate) : 'início'} até {effectiveRange.endDate ? formatDisplayDate(effectiveRange.endDate) : 'hoje'}</span>
           </div>
           <button className="iconButton" onClick={refreshData} disabled={loading} title="Atualizar dados">
             <RefreshCw size={18} />
           </button>
         </header>
 
-        <section className="notice">{status}</section>
+        {status && <section className="notice">{status}</section>}
 
         {activeTab === 'dashboard' && (
           <>
             <section className="filters">
-              <label><CalendarRange size={15} /> Semana <TooltipHint text="Mostra apenas semanas com dados importados. Se preencher Inicio ou Fim, o intervalo manual assume o filtro." />
+              <label><CalendarRange size={15} /> Semana <TooltipHint text="Apenas semanas com dados. Ao preencher datas manuais, elas têm prioridade." />
                 <select
                   value={`${filters.weekYear}-${String(filters.weekNumber).padStart(2, '0')}`}
                   onChange={(event) => {
@@ -519,8 +520,8 @@ export function App() {
                   {availableWeeks.map((week) => <option key={week.key} value={week.key}>{week.label}</option>)}
                 </select>
               </label>
-              <label><CalendarDays size={15} /> Inicio <TooltipHint text="Use junto com Fim para analisar um intervalo especifico." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
-              <label><CalendarDays size={15} /> Fim <TooltipHint text="Quando Inicio e Fim forem o mesmo dia, a tabela mostra cada escala diaria." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
+              <label><CalendarDays size={15} /> Início <TooltipHint text="Filtra a partir desta data." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
+              <label><CalendarDays size={15} /> Fim <TooltipHint text="Mesma data no início e fim exibe a visão diária detalhada." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
               <label><Search size={15} /> Nome<input placeholder="Conc" value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
               <label><Filter size={15} /> Turno<select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
               <label>Modal<select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
@@ -528,14 +529,14 @@ export function App() {
             </section>
 
             <section className="kpis">
-              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="total_hours_scheduled" tooltip="Soma de total_hours_scheduled no periodo filtrado." />
-              <Metric title="Horas a entregar" value={formatNumber(summary.targetTotal, 0)} hint="meta admin" tooltip="Soma das metas cadastradas no Admin para o periodo atual." />
-              <Metric title="Aderencia meta" value={formatPercent(summary.targetAdherence)} hint="entregues / meta" strong tooltip="Horas entregues divididas pelas horas planejadas no Admin." />
-              <Metric title="OnlineTime medio" value={formatPercent(summary.avgOnline)} hint="%OnlineTime" tooltip="Media de %OnlineTime nas linhas filtradas." />
-              <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="IDs unicos" tooltip="Quantidade distinta de courier_id_txt no filtro atual." />
+              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
+              <Metric title="Meta de horas" value={formatNumber(summary.targetTotal, 0)} hint="Planejado" tooltip="Total de horas planejadas no Admin para este período." />
+              <Metric title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Entregue vs meta" strong tooltip="Percentual de horas entregues em relação ao planejado." />
+              <Metric title="Tempo online" value={formatPercent(summary.avgOnline)} hint="Média" tooltip="Média do tempo online dos entregadores no período." />
+              <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
             </section>
 
-            <Suspense fallback={<section className="panel chartLoading">Carregando graficos...</section>}>
+            <Suspense fallback={<section className="panel chartLoading">Carregando gráficos…</section>}>
               <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} targetComparison={targetComparison} />
             </Suspense>
 
@@ -548,21 +549,21 @@ export function App() {
             <div className="importHero">
               <div className="importIcon"><FileSpreadsheet size={34} /></div>
               <div>
-                <p className="eyebrow">Atualizacao operacional</p>
-                <h2>Importar planilha de entregadores</h2>
-                <p>Arquivos XLSX ou CSV com Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
+                <p className="eyebrow">Importação de dados</p>
+                <h2>Importar planilha</h2>
+                <p>Aceita arquivos XLSX ou CSV com as colunas Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
               </div>
             </div>
             <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
               <input type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
               {loading ? <LoaderCircle size={22} /> : <Upload size={22} />}
-              <strong>{loading ? 'Processando arquivo' : 'Selecionar planilha'}</strong>
-              <span>O arquivo sera normalizado e gravado no Supabase em lotes.</span>
+              <strong>{loading ? 'Processando…' : 'Selecionar arquivo'}</strong>
+              <span>Os dados serão normalizados e salvos automaticamente.</span>
             </label>
             <div className="importChecklist">
-              <span><CheckCircle2 size={16} /> Usa total_hours_scheduled como horas entregues</span>
-              <span><CheckCircle2 size={16} /> Preserva a planilha original no payload bruto</span>
-              <span><CheckCircle2 size={16} /> Recarrega KPIs e filtros ao concluir</span>
+              <span><CheckCircle2 size={16} /> Calcula horas a partir da planilha</span>
+              <span><CheckCircle2 size={16} /> Mantém os dados originais como backup</span>
+              <span><CheckCircle2 size={16} /> Atualiza o painel ao finalizar</span>
             </div>
             <div className="importFields">
               {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
@@ -578,13 +579,13 @@ export function App() {
               <div className="panelHeader">
                 <div>
                   <p className="eyebrow">Planejamento</p>
-                  <h2>Metas de horas por dia</h2>
+                  <h2>Metas diárias</h2>
                 </div>
-                <label>Mes<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
+                <label>Mês<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
               </div>
               <div className="adminSummary">
                 <div>
-                  <span>Meta do mes</span>
+                  <span>Meta do mês</span>
                   <strong>{formatDurationHours(adminMonthTotal)}</strong>
                 </div>
                 <div>
@@ -593,7 +594,7 @@ export function App() {
                 </div>
               </div>
               <div className="adminTools">
-                <label>Preencher dias<input type="number" min="0" step="0.25" value={monthFillValue} placeholder="Horas por dia" onChange={(event) => setMonthFillValue(event.target.value)} /></label>
+                <label>Preencher dias<input type="number" min="0" step="0.25" value={monthFillValue} placeholder="Ex: 8" onChange={(event) => setMonthFillValue(event.target.value)} /></label>
                 <button
                   type="button"
                   className="secondary"
@@ -602,7 +603,7 @@ export function App() {
                     setMonthTargets(nextTargets)
                   }}
                 >
-                  Aplicar ao mes
+                  Aplicar a todos
                 </button>
               </div>
               <div className="monthTargets">
@@ -623,11 +624,11 @@ export function App() {
                   </label>
                 ))}
               </div>
-              <button className="primary" onClick={saveMonthTargets} disabled={loading}><Save size={17} /> Salvar metas do mes</button>
+              <button className="primary" onClick={saveMonthTargets} disabled={loading}><Save size={17} /> Salvar metas</button>
             </div>
             <div className="panel shiftPanel">
               <p className="eyebrow">Turnos</p>
-              <h2>Horas padrao</h2>
+              <h2>Horas por turno</h2>
               {shifts.map((shift, index) => (
                 <label key={shift.turno}>{shift.turno}
                   <input type="number" value={shift.expected_hours} onChange={(event) => setShifts(shifts.map((item, itemIndex) => itemIndex === index ? { ...item, expected_hours: Number(event.target.value) } : item))} />
@@ -668,7 +669,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           <p className="eyebrow">{isSingleDayView ? 'Visao diaria' : 'Consolidado por entregador'}</p>
           <h2>Entregadores</h2>
         </div>
-        <span><Clock3 size={14} /> {isSingleDayView ? 'Linhas do dia' : 'Horas somadas no periodo'}</span>
+        <span><Clock3 size={14} /> {isSingleDayView ? 'Detalhes do dia' : 'Consolidado no período'}</span>
       </div>
       <div className="tableWrap">
         <table>
@@ -678,7 +679,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
               <th>ID</th>
               <th>Nome</th>
               <th>Turno</th>
-              <th>Aderencia</th>
+              <th>Online %</th>
               <th>UTR</th>
               <th>Modal</th>
               <th>Horas entregues</th>
