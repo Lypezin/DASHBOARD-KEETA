@@ -103,7 +103,6 @@ button:disabled {
 .nav button,
 .iconButton,
 .primary,
-.secondary,
 .fileDrop {
   border: 0;
   border-radius: var(--radius);
@@ -738,25 +737,9 @@ td small {
   transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
 
-.secondary {
-  height: 42px;
-  padding: 0 14px;
-  border: 1px solid rgba(21, 18, 10, 0.14);
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--ink);
-  font-weight: 700;
-  white-space: nowrap;
-  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), border-color 220ms var(--ease);
-}
-
-.primary:hover,
-.secondary:hover {
+.primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lift);
-}
-
-.secondary:hover {
-  border-color: rgba(21, 18, 10, 0.30);
 }
 
 /* ─── Admin ─────────────────────────────────────── */
@@ -777,8 +760,12 @@ td small {
   margin-bottom: 16px;
 }
 
-.panelHeader label {
-  width: 190px;
+.adminSelectors {
+  min-width: min(100%, 410px);
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(170px, 210px);
+  align-items: end;
+  gap: 10px;
 }
 
 .adminSummary {
@@ -786,18 +773,6 @@ td small {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
-}
-
-.adminTools {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding: 12px;
-  border: 1px solid rgba(21, 18, 10, 0.08);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.62);
 }
 
 .adminSummary div {
@@ -1050,7 +1025,7 @@ td small {
   .filters,
   .kpis,
   .importChecklist,
-  .adminTools {
+  .adminSelectors {
     grid-template-columns: 1fr;
   }
 
@@ -1058,7 +1033,8 @@ td small {
     display: grid;
   }
 
-  .panelHeader label {
+  .adminSelectors {
+    min-width: 0;
     width: 100%;
   }
 
