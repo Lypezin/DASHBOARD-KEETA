@@ -161,7 +161,6 @@ export function App() {
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [adminTurno, setAdminTurno] = useState('')
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
-  const [monthFillValue, setMonthFillValue] = useState('')
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
@@ -283,7 +282,7 @@ export function App() {
       .filter((target) => {
         const dateOk = (!effectiveRange.startDate || target.target_date >= effectiveRange.startDate)
           && (!effectiveRange.endDate || target.target_date <= effectiveRange.endDate)
-        const turnoOk = !filters.turno || !target.turno || target.turno === filters.turno
+        const turnoOk = filters.turno ? target.turno === filters.turno : Boolean(target.turno)
         return dateOk && turnoOk
       })
       .reduce((sum, target) => sum + Number(target.required_hours || 0), 0)
@@ -569,7 +568,6 @@ export function App() {
               <div>
                 <p className="eyebrow">Importação de dados</p>
                 <h2>Importar planilha</h2>
-                <p>Aceita arquivos XLSX ou CSV com as colunas Turno, %OnlineTime, UTR, Conc, courier_id_txt, modal e total_hours_scheduled.</p>
               </div>
             </div>
             <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
@@ -599,37 +597,27 @@ export function App() {
                   <p className="eyebrow">Planejamento</p>
                   <h2>Metas diárias</h2>
                 </div>
-                <label>Mês<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
-                <label>Turno
-                  <select value={adminTurno} onChange={(event) => setAdminTurno(event.target.value)}>
-                    {adminTurnoOptions.map((turno) => (
-                      <option key={turno} value={turno}>{turno || 'Sem Turno'}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="adminSelectors">
+                  <label>Mês<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
+                  <label>Turno
+                    <select value={adminTurno} onChange={(event) => setAdminTurno(event.target.value)}>
+                      {adminTurnoOptions.length === 0 && <option value="">Nenhum turno encontrado</option>}
+                      {adminTurnoOptions.map((turno) => (
+                        <option key={turno} value={turno}>{turno}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
               <div className="adminSummary">
                 <div>
-                  <span>Meta do mês</span>
+                  <span>Meta do mês {adminTurno ? `· ${adminTurno}` : ''}</span>
                   <strong>{formatDurationHours(adminMonthTotal)}</strong>
                 </div>
                 <div>
                   <span>Dias configurados</span>
                   <strong>{Object.values(monthTargets).filter((value) => Number(value) > 0).length}</strong>
                 </div>
-              </div>
-              <div className="adminTools">
-                <label>Preencher dias<input type="number" min="0" step="0.25" value={monthFillValue} placeholder="Ex: 8" onChange={(event) => setMonthFillValue(event.target.value)} /></label>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => {
-                    const nextTargets = Object.fromEntries(adminDays.map((day) => [day.iso, monthFillValue || '0']))
-                    setMonthTargets(nextTargets)
-                  }}
-                >
-                  Aplicar a todos
-                </button>
               </div>
               <div className="monthTargets">
                 {adminDays.map((day) => (
