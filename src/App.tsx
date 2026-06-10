@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  AlertTriangle,
   Bike,
   CalendarDays,
   CalendarRange,
+  CheckCircle2,
   Clock3,
   Database,
   FileSpreadsheet,
@@ -15,6 +17,7 @@ import {
   SlidersHorizontal,
   Target,
   Upload,
+  X,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { addDays, format, getDaysInMonth } from 'date-fns'
@@ -112,6 +115,11 @@ type AvailableWeek = {
   label: string
 }
 
+type Notice = {
+  type: 'success' | 'error'
+  message: string
+}
+
 function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: digits,
@@ -190,7 +198,7 @@ export function App() {
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [adminTurno, setAdminTurno] = useState('')
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
-  const [status, setStatus] = useState('')
+  const [notice, setNotice] = useState<Notice | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -203,7 +211,7 @@ export function App() {
       setTargets(data.targets)
       setShifts(data.shifts.length ? data.shifts : defaultShifts)
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Não foi possível carregar os dados')
+      setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Não foi possível carregar os dados.' })
     } finally {
       setLoading(false)
     }
@@ -475,11 +483,11 @@ export function App() {
       const parsed = await parseWorkbook(file)
       const batchId = await importDeliveryRows(file.name, parsed)
       void batchId
-      setStatus(`Importação concluída — ${parsed.length} registros processados`)
+      setNotice({ type: 'success', message: `Importação concluída. ${parsed.length} registros processados.` })
       await refreshData()
       setActiveTab('dashboard')
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao importar arquivo')
+      setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Erro ao importar arquivo.' })
     } finally {
       setLoading(false)
     }
@@ -526,7 +534,7 @@ export function App() {
 
   async function saveMonthTargets() {
     if (!adminTurno) {
-      setStatus('Selecione um turno para salvar as metas')
+      setNotice({ type: 'error', message: 'Selecione um turno para salvar as metas.' })
       return
     }
 
@@ -539,10 +547,10 @@ export function App() {
         notes: `meta mensal ${adminMonth} - ${adminTurno}`,
       }))
       await upsertDailyTargets(payload)
-      setStatus(`Metas de ${adminMonth} para ${adminTurno} salvas com sucesso`)
+      setNotice({ type: 'success', message: `Metas de ${adminMonth} para ${adminTurno} salvas com sucesso.` })
       await refreshData()
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao salvar metas')
+      setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Erro ao salvar metas.' })
     } finally {
       setLoading(false)
     }
@@ -552,10 +560,10 @@ export function App() {
     setLoading(true)
     try {
       await upsertShiftConfig(shifts)
-      setStatus('Configuração de turnos salva com sucesso')
+      setNotice({ type: 'success', message: 'Configuração de turnos salva com sucesso.' })
       await refreshData()
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Erro ao salvar turnos')
+      setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Erro ao salvar turnos.' })
     } finally {
       setLoading(false)
     }
@@ -590,7 +598,7 @@ export function App() {
           </button>
         </header>
 
-        {status && <section className="notice">{status}</section>}
+        {notice && <NoticeBar notice={notice} onClose={() => setNotice(null)} />}
 
         {activeTab === 'dashboard' && (
           <>
@@ -759,6 +767,20 @@ function TooltipHint({ text }: { text: string }) {
     <span className="tooltipHint" tabIndex={0} data-tooltip={text} aria-label={text}>
       <Info size={13} />
     </span>
+  )
+}
+
+function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void }) {
+  const Icon = notice.type === 'success' ? CheckCircle2 : AlertTriangle
+
+  return (
+    <section className={clsx('notice', notice.type)} role={notice.type === 'error' ? 'alert' : 'status'}>
+      <Icon size={18} />
+      <span>{notice.message}</span>
+      <button type="button" onClick={onClose} aria-label="Fechar aviso">
+        <X size={15} />
+      </button>
+    </section>
   )
 }
 
