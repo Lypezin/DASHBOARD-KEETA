@@ -347,10 +347,15 @@ export function App() {
       item.target += Number(target.required_hours || 0)
       grouped.set(item.turno, item)
     }
+    const turnoOrder = ['Almoço', 'Lanche', 'Jantar', 'Ceia']
     return Array.from(grouped.values()).map((item) => ({
       ...item,
       online: item.rows ? item.online / item.rows : 0,
-    }))
+    })).sort((a, b) => {
+      const ai = turnoOrder.indexOf(a.turno)
+      const bi = turnoOrder.indexOf(b.turno)
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    })
   }, [effectiveRange.endDate, effectiveRange.startDate, filteredRows, filters.turno, targets])
 
   const byModal = useMemo(() => {

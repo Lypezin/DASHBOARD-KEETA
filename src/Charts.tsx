@@ -135,12 +135,12 @@ export function DashboardCharts({
               dataKey="turno"
               tickLine={false}
               axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
-              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
             />
             <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
             <Legend
@@ -148,7 +148,7 @@ export function DashboardCharts({
               align="right"
               iconType="circle"
               iconSize={8}
-              wrapperStyle={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, paddingBottom: 15 }}
+              wrapperStyle={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, paddingBottom: 16 }}
             />
             <Bar dataKey="target" name="A entregar" fill="#15120a" radius={[4, 4, 0, 0]} />
             <Bar dataKey="delivered" name="Entregues" fill="#ffcc00" radius={[4, 4, 0, 0]} />
@@ -174,7 +174,7 @@ export function DashboardCharts({
               width={76}
               tickLine={false}
               axisLine={false}
-              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, fill: 'var(--ink)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, fill: 'var(--ink)' }}
             />
             <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
             <Bar dataKey="hours" name="Horas" radius={[0, 6, 6, 0]}>
@@ -183,7 +183,7 @@ export function DashboardCharts({
                 dataKey="hours"
                 position="right"
                 formatter={(value) => formatDurationHours(Number(value ?? 0))}
-                style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, fill: 'var(--ink)' }}
+                style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, fill: 'var(--ink)' }}
               />
             </Bar>
           </BarChart>
@@ -212,7 +212,7 @@ export function DashboardCharts({
                   y={y}
                   textAnchor={textAnchor}
                   fontFamily="Inter"
-                  fontSize={10}
+                  fontSize={12}
                   fontWeight={700}
                   fill="var(--ink)"
                 >
@@ -241,16 +241,16 @@ export function DashboardCharts({
               dataKey="turno"
               tickLine={false}
               axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
-              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tickFormatter={(val) => `${val}%`}
-              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
             />
             <Tooltip content={<ChartTooltip mode="percent" />} cursor={{ stroke: '#15120a', strokeWidth: 1 }} />
-            <Area dataKey="online" name="OnlineTime médio" fill="rgba(255, 204, 0, 0.2)" stroke="#ffcc00" strokeWidth={2.5} />
+            <Area dataKey="online" name="Tempo online médio" fill="rgba(255, 204, 0, 0.2)" stroke="#ffcc00" strokeWidth={2.5} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
