@@ -444,9 +444,15 @@ export function App() {
             <h1>Aderência e horas entregues</h1>
             <span className="rangePill">{rangeSummary}</span>
           </div>
-          <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-busy={loading}>
-            <RefreshCw size={18} />
-          </button>
+          <div className="topbarActions">
+            <span className={clsx('dataPill', dashboardLoading && 'loading')} aria-live="polite">
+              <Database size={14} />
+              {dashboardLoading ? 'Atualizando painel' : 'Leitura otimizada'}
+            </span>
+            <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-busy={loading}>
+              <RefreshCw size={18} />
+            </button>
+          </div>
         </header>
 
         {notice && <NoticeBar notice={notice} onClose={() => setNotice(null)} />}
