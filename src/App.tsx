@@ -582,7 +582,7 @@ export function App() {
             <h1>Aderência e horas entregues</h1>
             <span className="rangePill">{effectiveRange.label} · {effectiveRange.startDate ? formatDisplayDate(effectiveRange.startDate) : 'início'} até {effectiveRange.endDate ? formatDisplayDate(effectiveRange.endDate) : 'hoje'}</span>
           </div>
-          <button className="iconButton" onClick={refreshData} disabled={loading} title="Atualizar dados">
+          <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-busy={loading}>
             <RefreshCw size={18} />
           </button>
         </header>
@@ -621,7 +621,7 @@ export function App() {
               <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
             </section>
 
-            <Suspense fallback={<section className="panel chartLoading">Carregando gráficos…</section>}>
+            <Suspense fallback={<section className="panel chartLoading" aria-label="Carregando gráficos"><span /><span /><span /></section>}>
               <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} targetComparison={targetComparison} />
             </Suspense>
 
@@ -793,7 +793,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           <h2>Entregadores</h2>
         </div>
         <div className="tableActions">
-          <span><Clock3 size={14} /> {isSingleDayView ? 'Detalhes do dia' : 'Consolidado no período'}</span>
+          <span><Clock3 size={14} /> {formatNumber(rows.length)} {isSingleDayView ? 'linhas no dia' : 'entregadores'}</span>
         </div>
       </div>
       <div className="tableWrap">
@@ -811,6 +811,16 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
             </tr>
           </thead>
           <tbody>
+            {sortedRows.length === 0 && (
+              <tr>
+                <td colSpan={8}>
+                  <div className="emptyTable">
+                    <strong>Nenhum entregador encontrado</strong>
+                    <span>Ajuste os filtros ou importe uma planilha para preencher esta visão.</span>
+                  </div>
+                </td>
+              </tr>
+            )}
             {sortedRows.map((row) => (
               <tr key={row.key}>
                 <td>{row.dateLabel}</td>
