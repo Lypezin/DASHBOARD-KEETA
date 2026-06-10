@@ -517,7 +517,7 @@ export function App() {
             <section className="kpis">
               <Metric icon={<Clock3 size={17} />} title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
               <Metric icon={<Target size={17} />} title="Meta de horas" value={formatNumber(summary.targetTotal, 0)} hint="Planejado" tooltip="Total de horas planejadas no Admin para este período." />
-              <Metric icon={<CheckCircle2 size={17} />} title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Entregue vs meta" strong tooltip="Percentual de horas entregues em relação ao planejado." />
+              <Metric icon={<CheckCircle2 size={17} />} title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Meta vs entregue" strong tooltip="Percentual da meta planejada em relação às horas entregues." />
               <Metric icon={<FileSpreadsheet size={17} />} title="Pedidos" value={formatNumber(summary.pedidos, 0)} hint="Total no período" tooltip="Soma da coluna pedidos no período filtrado." />
               <Metric icon={<Bike size={17} />} title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
             </section>
