@@ -41,6 +41,11 @@ type TooltipEntry = {
   payload?: Record<string, unknown>
 }
 
+const chartTick = { fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }
+const chartTickStrong = { fontFamily: 'Inter', fontSize: 12, fontWeight: 700, fill: 'var(--ink)' }
+const legendStyle = { fontFamily: 'Inter', fontSize: 12, fontWeight: 600, paddingBottom: 16 }
+const labelStyle = { fontFamily: 'Inter', fontSize: 11, fontWeight: 700, fill: 'var(--ink)' }
+
 function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat('pt-BR', {
     maximumFractionDigits: digits,
@@ -125,6 +130,7 @@ export function DashboardCharts({
   const hasTurnoData = byTurno.some((item) => item.delivered > 0 || item.target > 0 || item.online > 0)
   const hasModalData = modalData.some((item) => item.value > 0)
   const hasGoalData = targetComparison.target > 0 || targetComparison.delivered > 0
+  const dominantModal = modalData.reduce((current, item) => item.value > current.value ? item : current, { name: 'Sem modal', value: 0, percent: 0 })
   const goalData = [
     { name: 'Meta', hours: targetComparison.target, fill: '#15120a' },
     { name: 'Entregue', hours: targetComparison.delivered, fill: '#ffcc00' },
@@ -148,12 +154,12 @@ export function DashboardCharts({
                 dataKey="turno"
                 tickLine={false}
                 axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
-                tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
+                tick={chartTick}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
+                tick={chartTick}
               />
               <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
               <Legend
@@ -161,7 +167,7 @@ export function DashboardCharts({
                 align="right"
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, paddingBottom: 16 }}
+                wrapperStyle={legendStyle}
               />
               <Bar dataKey="target" name="A entregar" fill="#15120a" radius={[4, 4, 0, 0]} />
               <Bar dataKey="delivered" name="Entregues" fill="#ffcc00" radius={[4, 4, 0, 0]} />
@@ -189,7 +195,7 @@ export function DashboardCharts({
                 width={76}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 700, fill: 'var(--ink)' }}
+                tick={chartTickStrong}
               />
               <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
               <Bar dataKey="hours" name="Horas" radius={[0, 6, 6, 0]}>
@@ -198,7 +204,7 @@ export function DashboardCharts({
                   dataKey="hours"
                   position="right"
                   formatter={(value) => formatDurationHours(Number(value ?? 0))}
-                  style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, fill: 'var(--ink)' }}
+                  style={labelStyle}
                 />
               </Bar>
             </BarChart>
@@ -214,34 +220,41 @@ export function DashboardCharts({
           </div>
         </div>
         {hasModalData ? (
-          <ResponsiveContainer width="100%" height={310}>
-            <PieChart>
-              <Pie
-                data={modalData}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={66}
-                outerRadius={96}
-                labelLine={false}
-                label={({ x, y, textAnchor, name, payload }: any) => (
-                  <text
-                    x={x}
-                    y={y}
-                    textAnchor={textAnchor}
-                    fontFamily="Inter"
-                    fontSize={12}
-                    fontWeight={700}
-                    fill="var(--ink)"
-                  >
-                    {`${name} ${formatPercent(Number(payload?.percent ?? 0))}`}
-                  </text>
-                )}
-              >
-                {modalData.map((entry, index) => <Cell key={entry.name} fill={modalColors[index % modalColors.length]} />)}
-              </Pie>
-              <Tooltip content={<ChartTooltip mode="modal" />} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="donutChartWrap">
+            <ResponsiveContainer width="100%" height={310}>
+              <PieChart>
+                <Pie
+                  data={modalData}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={72}
+                  outerRadius={98}
+                  paddingAngle={2}
+                  labelLine={false}
+                  label={({ x, y, textAnchor, name, payload }: any) => (
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor={textAnchor}
+                      fontFamily="Inter"
+                      fontSize={12}
+                      fontWeight={700}
+                      fill="var(--ink)"
+                    >
+                      {`${name} ${formatPercent(Number(payload?.percent ?? 0))}`}
+                    </text>
+                  )}
+                >
+                  {modalData.map((entry, index) => <Cell key={entry.name} fill={modalColors[index % modalColors.length]} />)}
+                </Pie>
+                <Tooltip content={<ChartTooltip mode="modal" />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="donutCenter" aria-hidden="true">
+              <strong>{formatPercent(dominantModal.percent)}</strong>
+              <span>{dominantModal.name}</span>
+            </div>
+          </div>
         ) : <ChartEmpty message="Sem horas filtradas para distribuir por modal." />}
       </div>
 
@@ -260,13 +273,13 @@ export function DashboardCharts({
                 dataKey="turno"
                 tickLine={false}
                 axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
-                tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
+                tick={chartTick}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(val) => `${val}%`}
-                tick={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, fill: 'var(--muted)' }}
+                tick={chartTick}
               />
               <Tooltip content={<ChartTooltip mode="percent" />} cursor={{ stroke: '#15120a', strokeWidth: 1 }} />
               <Area dataKey="online" name="Tempo online médio" fill="rgba(255, 204, 0, 0.2)" stroke="#ffcc00" strokeWidth={2.5} />
