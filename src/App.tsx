@@ -381,6 +381,7 @@ export function App() {
   }, [summary.delivered, summary.targetTotal])
 
   const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
+  const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
 
   const deliveryTableRows = useMemo(() => {
     if (isSingleDayView) {
@@ -611,6 +612,22 @@ export function App() {
               <label><Search size={15} /> ID <TooltipHint text="Busca pelo ID do entregador." /><input placeholder="Buscar ID..." value={filters.courierId} onChange={(event) => setFilters({ ...filters, courierId: event.target.value })} /></label>
               <label><Filter size={15} /> Turno <TooltipHint text="Filtra pelo turno de trabalho." /><select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
               <label><Bike size={15} /> Modal <TooltipHint text="Filtra pelo tipo de veículo." /><select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
+              <button
+                type="button"
+                className="clearFilters"
+                disabled={!hasManualFilters}
+                onClick={() => setFilters((current) => ({
+                  ...current,
+                  startDate: '',
+                  endDate: '',
+                  name: '',
+                  courierId: '',
+                  turno: '',
+                  modal: '',
+                }))}
+              >
+                Limpar filtros
+              </button>
             </section>
 
             <section className="kpis">
@@ -827,10 +844,10 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
                 <td>{row.courier_id_txt}</td>
                 <td>{row.conc}</td>
                 <td>{row.turno}</td>
-                <td>{formatPercent(row.online_time_pct)}</td>
-                <td>{formatDecimal(row.utr)}</td>
+                <td className="numericCell">{formatPercent(row.online_time_pct)}</td>
+                <td className="numericCell">{formatDecimal(row.utr)}</td>
                 <td>{row.modal}</td>
-                <td>
+                <td className="numericCell">
                   <span className="durationCell">{formatDurationHours(row.delivered_hours)}</span>
                   {!isSingleDayView && <small>{row.sourceRows} linhas</small>}
                 </td>
