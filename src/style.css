@@ -148,10 +148,11 @@ caption {
   justify-content: flex-start;
   padding: 13px 14px;
   color: #fff6cf;
+  border: 1px solid transparent;
   background: transparent;
   font-weight: 600;
   font-size: 14px;
-  transition: transform 220ms var(--ease-out), background 220ms var(--ease), color 220ms var(--ease);
+  transition: transform 220ms var(--ease-out), background 220ms var(--ease), border-color 220ms var(--ease), color 220ms var(--ease);
 }
 
 .nav button::before {
@@ -170,6 +171,7 @@ caption {
 .nav button.active,
 .nav button:hover {
   background: rgba(255, 204, 0, 0.14);
+  border-color: rgba(255, 204, 0, 0.18);
   color: var(--keeta-yellow);
   transform: translateX(2px);
 }
@@ -177,6 +179,12 @@ caption {
 .nav button.active::before {
   opacity: 1;
   transform: scaleY(1);
+}
+
+.nav button:focus-visible {
+  outline-color: rgba(255, 204, 0, 0.92);
+  background: rgba(255, 204, 0, 0.16);
+  color: var(--keeta-yellow);
 }
 
 /* ─── Content ───────────────────────────────────── */

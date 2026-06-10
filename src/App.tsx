@@ -431,14 +431,14 @@ export function App() {
     <main className="shell">
       <aside className="sidebar">
         <div className="brandMark">KEETA</div>
-        <nav className="nav">
-          <button className={clsx(activeTab === 'dashboard' && 'active')} onClick={() => setActiveTab('dashboard')} aria-pressed={activeTab === 'dashboard'}>
+        <nav className="nav" aria-label="Navegação principal">
+          <button className={clsx(activeTab === 'dashboard' && 'active')} onClick={() => setActiveTab('dashboard')} aria-label="Abrir dashboard" aria-pressed={activeTab === 'dashboard'}>
             <SlidersHorizontal size={18} /> Dashboard
           </button>
-          <button className={clsx(activeTab === 'import' && 'active')} onClick={() => setActiveTab('import')} aria-pressed={activeTab === 'import'}>
+          <button className={clsx(activeTab === 'import' && 'active')} onClick={() => setActiveTab('import')} aria-label="Abrir importação de planilha" aria-pressed={activeTab === 'import'}>
             <Upload size={18} /> Importar
           </button>
-          <button className={clsx(activeTab === 'admin' && 'active')} onClick={() => setActiveTab('admin')} aria-pressed={activeTab === 'admin'}>
+          <button className={clsx(activeTab === 'admin' && 'active')} onClick={() => setActiveTab('admin')} aria-label="Abrir área administrativa" aria-pressed={activeTab === 'admin'}>
             <Database size={18} /> Admin
           </button>
         </nav>
@@ -456,7 +456,7 @@ export function App() {
               <Database size={14} />
               {dashboardLoading ? 'Atualizando painel' : 'Leitura otimizada'}
             </span>
-            <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-busy={loading}>
+            <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-label="Atualizar dados" aria-busy={loading}>
               <RefreshCw size={18} />
             </button>
           </div>
