@@ -341,7 +341,7 @@ select:focus {
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -531,6 +531,34 @@ select:focus {
 
 .chartLoading span:nth-child(3) {
   width: 58%;
+}
+
+.chartEmpty {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed rgba(21, 18, 10, 0.14);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 247, 211, 0.34)),
+    rgba(255, 255, 255, 0.48);
+  color: var(--muted);
+  text-align: center;
+}
+
+.chartEmpty strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.chartEmpty span {
+  max-width: 300px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .panel.wide {
@@ -983,12 +1011,32 @@ td small {
 }
 
 .dayTarget {
+  position: relative;
   min-height: 96px;
   padding: 12px;
   border: 1px solid rgba(21, 18, 10, 0.07);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.80);
   transition: transform 200ms var(--ease-out), border-color 200ms var(--ease), box-shadow 200ms var(--ease-out), background 200ms var(--ease);
+}
+
+.dayTarget.configured {
+  border-color: rgba(255, 204, 0, 0.50);
+  background:
+    linear-gradient(135deg, rgba(255, 204, 0, 0.16), rgba(255, 255, 255, 0.86)),
+    rgba(255, 255, 255, 0.82);
+}
+
+.dayTarget.configured::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--keeta-yellow);
+  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.16);
 }
 
 .dayTarget:hover {
@@ -1170,10 +1218,6 @@ td small {
 @media (max-width: 1320px) {
   .filters {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

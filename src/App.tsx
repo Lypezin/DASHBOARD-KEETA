@@ -706,7 +706,7 @@ export function App() {
                       return <div key={day.iso} className="dayTargetPadding" />
                     }
                     return (
-                      <label className="dayTarget" key={day.iso}>
+                      <label className={clsx('dayTarget', Number(monthTargets[day.iso] || 0) > 0 && 'configured')} key={day.iso}>
                         <span>
                           <strong>{String(day.day).padStart(2, '0')}</strong>
                           <small>{day.weekday}</small>
