@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -73,8 +74,8 @@ function ChartTooltip({
   if (!active || !payload?.length) return null
 
   return (
-    <div className="chartTooltip">
-      {label && <strong>{label}</strong>}
+    <div className="chartTooltip" style={{ fontFamily: 'Inter' }}>
+      {label && <strong style={{ fontFamily: 'Inter' }}>{label}</strong>}
       {payload.map((entry) => {
         const value = Number(entry.value ?? 0)
         const modalPercent = Number(entry.payload?.percent ?? 0)
@@ -86,7 +87,7 @@ function ChartTooltip({
         const name = mode === 'modal' ? String(entry.payload?.name ?? entry.name ?? 'Modal') : entry.name
 
         return (
-          <span key={`${name}-${formattedValue}`}>
+          <span key={`${name}-${formattedValue}`} style={{ fontFamily: 'Inter' }}>
             <i style={{ backgroundColor: entry.color }} />
             {name}: {formattedValue}
           </span>
@@ -128,41 +129,71 @@ export function DashboardCharts({
           </div>
         </div>
         <ResponsiveContainer width="100%" height={310}>
-          <BarChart data={byTurno}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(21,18,10,0.12)" />
-            <XAxis dataKey="turno" />
-            <YAxis />
-            <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.10)' }} />
-            <Bar dataKey="target" name="A entregar" fill="#141414" radius={[4, 4, 0, 0]} />
+          <BarChart data={byTurno} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(21,18,10,0.08)" />
+            <XAxis
+              dataKey="turno"
+              tickLine={false}
+              axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+            />
+            <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
+            <Legend
+              verticalAlign="top"
+              align="right"
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, paddingBottom: 15 }}
+            />
+            <Bar dataKey="target" name="A entregar" fill="#15120a" radius={[4, 4, 0, 0]} />
             <Bar dataKey="delivered" name="Entregues" fill="#ffcc00" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
+
       <div className="panel chartPanel goalPanel">
         <div className="chartHeader">
           <div>
-            <p className="eyebrow">Aderencia da meta</p>
+            <p className="eyebrow">Aderência da meta</p>
             <h2>Meta vs entregue</h2>
           </div>
           <span>{formatPercent(targetComparison.adherence)}</span>
         </div>
         <ResponsiveContainer width="100%" height={310}>
-          <BarChart data={goalData} layout="vertical" margin={{ left: 12, right: 28 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(21,18,10,0.12)" />
+          <BarChart data={goalData} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(21,18,10,0.08)" />
             <XAxis type="number" hide />
-            <YAxis type="category" dataKey="name" width={76} />
-            <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.10)' }} />
-            <Bar dataKey="hours" name="Horas" radius={[0, 7, 7, 0]}>
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={76}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, fill: 'var(--ink)' }}
+            />
+            <Tooltip content={<ChartTooltip mode="hours" />} cursor={{ fill: 'rgba(255, 204, 0, 0.06)' }} />
+            <Bar dataKey="hours" name="Horas" radius={[0, 6, 6, 0]}>
               {goalData.map((entry) => <Cell key={entry.name} fill={entry.fill} />)}
-              <LabelList dataKey="hours" position="right" formatter={(value) => formatDurationHours(Number(value ?? 0))} />
+              <LabelList
+                dataKey="hours"
+                position="right"
+                formatter={(value) => formatDurationHours(Number(value ?? 0))}
+                style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, fill: 'var(--ink)' }}
+              />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
+
       <div className="panel chartPanel">
         <div className="chartHeader">
           <div>
-            <p className="eyebrow">Distribuicao</p>
+            <p className="eyebrow">Distribuição</p>
             <h2>Modal</h2>
           </div>
         </div>
@@ -173,9 +204,21 @@ export function DashboardCharts({
               dataKey="value"
               nameKey="name"
               innerRadius={66}
-              outerRadius={104}
+              outerRadius={96}
               labelLine={false}
-              label={(props) => `${props.name} ${formatPercent(Number(props.payload?.percent ?? 0))}`}
+              label={({ x, y, textAnchor, name, payload }: any) => (
+                <text
+                  x={x}
+                  y={y}
+                  textAnchor={textAnchor}
+                  fontFamily="Inter"
+                  fontSize={10}
+                  fontWeight={700}
+                  fill="var(--ink)"
+                >
+                  {`${name} ${formatPercent(Number(payload?.percent ?? 0))}`}
+                </text>
+              )}
             >
               {modalData.map((entry, index) => <Cell key={entry.name} fill={modalColors[index % modalColors.length]} />)}
             </Pie>
@@ -183,20 +226,31 @@ export function DashboardCharts({
           </PieChart>
         </ResponsiveContainer>
       </div>
+
       <div className="panel chartPanel wide">
         <div className="chartHeader">
           <div>
             <p className="eyebrow">Qualidade</p>
-            <h2>Aderencia online por turno</h2>
+            <h2>Aderência online por turno</h2>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={byTurno}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(21,18,10,0.12)" />
-            <XAxis dataKey="turno" />
-            <YAxis />
+          <AreaChart data={byTurno} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(21,18,10,0.08)" />
+            <XAxis
+              dataKey="turno"
+              tickLine={false}
+              axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
+              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(val) => `${val}%`}
+              tick={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 500, fill: 'var(--muted)' }}
+            />
             <Tooltip content={<ChartTooltip mode="percent" />} cursor={{ stroke: '#15120a', strokeWidth: 1 }} />
-            <Area dataKey="online" name="OnlineTime medio" fill="#ffcc00" stroke="#141414" strokeWidth={2} />
+            <Area dataKey="online" name="OnlineTime médio" fill="rgba(255, 204, 0, 0.2)" stroke="#ffcc00" strokeWidth={2.5} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

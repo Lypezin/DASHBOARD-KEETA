@@ -823,11 +823,52 @@ td small {
   font-variant-numeric: tabular-nums;
 }
 
+.calendarWrap {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-color: rgba(21, 18, 10, 0.20) rgba(21, 18, 10, 0.04);
+  scrollbar-width: thin;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.calendarWrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+.calendarWrap::-webkit-scrollbar-track {
+  background: rgba(21, 18, 10, 0.04);
+}
+
+.calendarWrap::-webkit-scrollbar-thumb {
+  background: rgba(21, 18, 10, 0.20);
+  border-radius: 999px;
+}
+
 .monthTargets {
   display: grid;
   grid-template-columns: repeat(7, minmax(86px, 1fr));
   gap: 9px;
-  margin-bottom: 16px;
+  min-width: 640px;
+}
+
+.calendarHeaderCell {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  text-align: center;
+  padding: 6px 0;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid rgba(21, 18, 10, 0.06);
+  margin-bottom: 4px;
+}
+
+.dayTargetPadding {
+  background: rgba(21, 18, 10, 0.02);
+  border: 1px dashed rgba(21, 18, 10, 0.05);
+  border-radius: var(--radius);
+  min-height: 92px;
 }
 
 .dayTarget {
@@ -983,10 +1024,6 @@ td small {
   .kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
-  .monthTargets {
-    grid-template-columns: repeat(5, minmax(86px, 1fr));
-  }
 }
 
 @media (max-width: 1180px) {
@@ -1054,10 +1091,6 @@ td small {
   .adminSelectors {
     min-width: 0;
     width: 100%;
-  }
-
-  .monthTargets {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .importHero {

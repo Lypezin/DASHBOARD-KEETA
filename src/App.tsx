@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
+  Bike,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
@@ -9,6 +10,7 @@ import {
   Filter,
   Info,
   LoaderCircle,
+  MapPin,
   RefreshCw,
   Save,
   Search,
@@ -479,6 +481,28 @@ export function App() {
     })
   }, [adminMonth])
 
+  const adminCalendarGrid = useMemo(() => {
+    if (!adminDays.length) return []
+    const [year, month] = adminMonth.split('-').map(Number)
+    const firstDate = new Date(year, month - 1, 1)
+    const firstDayOfWeek = firstDate.getDay() // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const paddingCount = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+
+    const padding = Array.from({ length: paddingCount }, (_, index) => ({
+      iso: `padding-${index}`,
+      day: 0,
+      weekday: '',
+      isPadding: true,
+    }))
+
+    const realDays = adminDays.map((day) => ({
+      ...day,
+      isPadding: false,
+    }))
+
+    return [...padding, ...realDays]
+  }, [adminDays, adminMonth])
+
   const adminMonthTotal = useMemo(() => {
     return adminDays.reduce((sum, day) => sum + Number(monthTargets[day.iso] || 0), 0)
   }, [adminDays, monthTargets])
@@ -569,10 +593,10 @@ export function App() {
               </label>
               <label><CalendarDays size={15} /> Início <TooltipHint text="Filtra a partir desta data." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
               <label><CalendarDays size={15} /> Fim <TooltipHint text="Mesma data no início e fim exibe a visão diária detalhada." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
-              <label><Search size={15} /> Nome<input placeholder="Conc" value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
-              <label><Filter size={15} /> Turno<select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
-              <label>Modal<select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
-              <label>UTR<select value={filters.utr} onChange={(event) => setFilters({ ...filters, utr: event.target.value })}><option value="">Todas</option>{optionValues(rows, 'utr').map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label><Search size={15} /> Parceiro <TooltipHint text="Busca pelo nome da concessionária / parceiro." /><input placeholder="Buscar parceiro..." value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
+              <label><Filter size={15} /> Turno <TooltipHint text="Filtra pelo turno de trabalho." /><select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label><Bike size={15} /> Modal <TooltipHint text="Filtra pelo tipo de veículo." /><select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label><MapPin size={15} /> UTR <TooltipHint text="Filtra pela unidade de transferência regional." /><select value={filters.utr} onChange={(event) => setFilters({ ...filters, utr: event.target.value })}><option value="">Todas</option>{optionValues(rows, 'utr').map((value) => <option key={value}>{value}</option>)}</select></label>
             </section>
 
             <section className="kpis">
@@ -611,10 +635,13 @@ export function App() {
               <span><CheckCircle2 size={16} /> Mantém os dados originais como backup</span>
               <span><CheckCircle2 size={16} /> Atualiza o painel ao finalizar</span>
             </div>
-            <div className="importFields">
-              {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
-                <span key={field}>{field}</span>
-              ))}
+            <div style={{ marginTop: '20px' }}>
+              <p className="eyebrow" style={{ marginBottom: '6px' }}>Colunas obrigatórias na planilha</p>
+              <div className="importFields">
+                {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
+                  <span key={field}>{field}</span>
+                ))}
+              </div>
             </div>
           </section>
         )}
@@ -649,23 +676,33 @@ export function App() {
                   <strong>{Object.values(monthTargets).filter((value) => Number(value) > 0).length}</strong>
                 </div>
               </div>
-              <div className="monthTargets">
-                {adminDays.map((day) => (
-                  <label className="dayTarget" key={day.iso}>
-                    <span>
-                      <strong>{String(day.day).padStart(2, '0')}</strong>
-                      <small>{day.weekday}</small>
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.25"
-                      value={monthTargets[day.iso] ?? ''}
-                      placeholder="0"
-                      onChange={(event) => setMonthTargets({ ...monthTargets, [day.iso]: event.target.value })}
-                    />
-                  </label>
-                ))}
+              <div className="calendarWrap">
+                <div className="monthTargets">
+                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => (
+                    <div key={d} className="calendarHeaderCell">{d}</div>
+                  ))}
+                  {adminCalendarGrid.map((day) => {
+                    if (day.isPadding) {
+                      return <div key={day.iso} className="dayTargetPadding" />
+                    }
+                    return (
+                      <label className="dayTarget" key={day.iso}>
+                        <span>
+                          <strong>{String(day.day).padStart(2, '0')}</strong>
+                          <small>{day.weekday}</small>
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.25"
+                          value={monthTargets[day.iso] ?? ''}
+                          placeholder="0"
+                          onChange={(event) => setMonthTargets({ ...monthTargets, [day.iso]: event.target.value })}
+                        />
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
               <button className="primary" onClick={saveMonthTargets} disabled={loading}><Save size={17} /> Salvar metas</button>
             </div>
@@ -718,7 +755,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
     <section className="panel tablePanel">
       <div className="tableTitle">
         <div>
-          <p className="eyebrow">{isSingleDayView ? 'Visao diaria' : 'Consolidado por entregador'}</p>
+          <p className="eyebrow">{isSingleDayView ? 'Visão diária' : 'Consolidado por entregador'}</p>
           <h2>Entregadores</h2>
         </div>
         <div className="tableActions">
@@ -737,7 +774,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
             <tr>
               <th>Data</th>
               <th>ID</th>
-              <th>Nome</th>
+              <th>Parceiro</th>
               <th>Turno</th>
               <th>Online %</th>
               <th>UTR</th>
