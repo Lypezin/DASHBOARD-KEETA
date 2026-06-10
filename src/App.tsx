@@ -432,18 +432,33 @@ export function App() {
   return (
     <main className="shell">
       <aside className="sidebar">
-        <div className="brandMark">KEETA</div>
+        <div className="brandBlock">
+          <div className="brandMark">K</div>
+          <div>
+            <strong>KEETA</strong>
+            <span>Operação last mile</span>
+          </div>
+        </div>
         <nav className="nav" aria-label="Navegação principal">
+          <span className="navLabel">Menu</span>
           <button className={clsx(activeTab === 'dashboard' && 'active')} onClick={() => setActiveTab('dashboard')} aria-label="Abrir dashboard" aria-pressed={activeTab === 'dashboard'}>
-            <SlidersHorizontal size={18} /> Dashboard
+            <SlidersHorizontal size={18} />
+            <span><strong>Dashboard</strong><small>Indicadores e entregadores</small></span>
           </button>
           <button className={clsx(activeTab === 'import' && 'active')} onClick={() => setActiveTab('import')} aria-label="Abrir importação de planilha" aria-pressed={activeTab === 'import'}>
-            <Upload size={18} /> Importar
+            <Upload size={18} />
+            <span><strong>Importar</strong><small>Atualizar planilhas</small></span>
           </button>
           <button className={clsx(activeTab === 'admin' && 'active')} onClick={() => setActiveTab('admin')} aria-label="Abrir área administrativa" aria-pressed={activeTab === 'admin'}>
-            <Database size={18} /> Admin
+            <Database size={18} />
+            <span><strong>Admin</strong><small>Metas e turnos</small></span>
           </button>
         </nav>
+        <div className="sidebarFooter" aria-label="Resumo do painel">
+          <span>Semana ativa</span>
+          <strong>{effectiveRange.label}</strong>
+          <small>{dashboardLoading ? 'Sincronizando dados' : 'Painel pronto para análise'}</small>
+        </div>
       </aside>
 
       <section className="content">
