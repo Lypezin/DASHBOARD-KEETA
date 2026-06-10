@@ -590,7 +590,7 @@ export function App() {
               <div className="adminSummary">
                 <div>
                   <span><Target size={14} /> Meta do mês {adminTurno ? `· ${adminTurno}` : ''}</span>
-                  <strong>{formatDurationHours(adminMonthTotal)}</strong>
+                  <strong>{formatNumber(adminMonthTotal, 0)}</strong>
                 </div>
                 <div>
                   <span><CalendarDays size={14} /> Dias configurados</span>
