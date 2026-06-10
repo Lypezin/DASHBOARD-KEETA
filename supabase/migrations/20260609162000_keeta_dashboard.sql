@@ -49,6 +49,7 @@ create table if not exists public.keeta_delivery_rows (
   conc text not null default '',
   courier_id_txt text not null default '',
   modal text not null default '',
+  pedidos numeric(12, 2) not null default 0,
   target_hours_value numeric(12, 4) not null default 0,
   delivered_hours numeric(12, 4) generated always as (target_hours_value / 24.0) stored,
   raw_payload jsonb not null default '{}'::jsonb,

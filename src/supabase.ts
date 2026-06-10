@@ -82,6 +82,7 @@ export async function importDeliveryRows(fileName: string, rows: ParsedImportRow
     conc: row.conc,
     courier_id_txt: row.courier_id_txt,
     modal: row.modal,
+    pedidos: row.pedidos,
     target_hours_value: row.target_hours_value,
     total_hours_scheduled_value: row.total_hours_scheduled_value,
     raw_payload: row.raw_payload,

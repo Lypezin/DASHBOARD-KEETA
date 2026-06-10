@@ -9,7 +9,6 @@ import {
   Filter,
   Info,
   LoaderCircle,
-  MapPin,
   RefreshCw,
   Save,
   Search,
@@ -80,9 +79,9 @@ const emptyFilters: Filters = {
   weekYear: String(currentWeek.year),
   weekNumber: String(currentWeek.weekNumber),
   name: '',
+  courierId: '',
   turno: '',
   modal: '',
-  utr: '',
 }
 
 const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
@@ -97,9 +96,13 @@ type DeliveryTableRow = {
   online_time_pct: number
   utr: number | null
   modal: string
+  pedidos: number
   delivered_hours: number
   sourceRows: number
 }
+
+type DeliverySortKey = 'online' | 'utr' | 'delivered'
+type SortDirection = 'desc' | 'asc'
 
 type AvailableWeek = {
   key: string
@@ -298,10 +301,10 @@ export function App() {
       const dateOk = (!effectiveRange.startDate || (row.delivery_date ?? '') >= effectiveRange.startDate)
         && (!effectiveRange.endDate || (row.delivery_date ?? '') <= effectiveRange.endDate)
       const nameOk = !filters.name || row.conc.toLowerCase().includes(filters.name.toLowerCase())
+      const idOk = !filters.courierId || row.courier_id_txt.toLowerCase().includes(filters.courierId.toLowerCase())
       const turnoOk = !filters.turno || row.turno === filters.turno
       const modalOk = !filters.modal || row.modal === filters.modal
-      const utrOk = !filters.utr || row.utr === filters.utr
-      return dateOk && nameOk && turnoOk && modalOk && utrOk
+      return dateOk && nameOk && idOk && turnoOk && modalOk
     })
   }, [effectiveRange.endDate, effectiveRange.startDate, filters, rows])
 
@@ -311,6 +314,7 @@ export function App() {
       ? filteredRows.reduce((sum, row) => sum + Number(row.online_time_pct || 0), 0) / filteredRows.length
       : 0
     const couriers = new Set(filteredRows.map((row) => row.courier_id_txt).filter(Boolean)).size
+    const pedidos = filteredRows.reduce((sum, row) => sum + Number(row.pedidos || 0), 0)
 
     const targetTotal = targets
       .filter((target) => {
@@ -325,6 +329,7 @@ export function App() {
       delivered,
       avgOnline,
       couriers,
+      pedidos,
       targetTotal,
       targetAdherence: targetTotal > 0 ? (delivered / targetTotal) * 100 : 0,
     }
@@ -391,6 +396,7 @@ export function App() {
         online_time_pct: Number(row.online_time_pct || 0),
         utr: row.utr === null ? null : Number(row.utr),
         modal: row.modal,
+        pedidos: Number(row.pedidos || 0),
         delivered_hours: Number(row.delivered_hours || 0),
         sourceRows: 1,
       }))
@@ -403,6 +409,7 @@ export function App() {
       turnos: Set<string>
       modals: Set<string>
       delivered_hours: number
+      pedidos: number
       onlineSum: number
       utrSum: number
       utrCount: number
@@ -418,6 +425,7 @@ export function App() {
         turnos: new Set<string>(),
         modals: new Set<string>(),
         delivered_hours: 0,
+        pedidos: 0,
         onlineSum: 0,
         utrSum: 0,
         utrCount: 0,
@@ -428,6 +436,7 @@ export function App() {
       item.turnos.add(row.turno)
       item.modals.add(row.modal)
       item.delivered_hours += Number(row.delivered_hours || 0)
+      item.pedidos += Number(row.pedidos || 0)
       item.onlineSum += Number(row.online_time_pct || 0)
       const utr = row.utr === null ? Number.NaN : Number(row.utr)
       if (Number.isFinite(utr)) {
@@ -451,6 +460,7 @@ export function App() {
         online_time_pct: item.sourceRows ? item.onlineSum / item.sourceRows : 0,
         utr: item.utrCount ? item.utrSum / item.utrCount : null,
         modal: singleOrMultiple(item.modals),
+        pedidos: item.pedidos,
         delivered_hours: item.delivered_hours,
         sourceRows: item.sourceRows,
       }
@@ -600,17 +610,17 @@ export function App() {
               </label>
               <label><CalendarDays size={15} /> Início <TooltipHint text="Filtra a partir desta data." /><input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} /></label>
               <label><CalendarDays size={15} /> Fim <TooltipHint text="Mesma data no início e fim exibe a visão diária detalhada." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
-              <label><Search size={15} /> Parceiro <TooltipHint text="Busca pelo nome da concessionária / parceiro." /><input placeholder="Buscar parceiro..." value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
+              <label><Search size={15} /> Parceiro <TooltipHint text="Busca pelo nome do parceiro" /><input placeholder="Buscar parceiro..." value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
+              <label><Search size={15} /> ID <TooltipHint text="Busca pelo ID do entregador." /><input placeholder="Buscar ID..." value={filters.courierId} onChange={(event) => setFilters({ ...filters, courierId: event.target.value })} /></label>
               <label><Filter size={15} /> Turno <TooltipHint text="Filtra pelo turno de trabalho." /><select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
               <label><Bike size={15} /> Modal <TooltipHint text="Filtra pelo tipo de veículo." /><select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
-              <label><MapPin size={15} /> UTR <TooltipHint text="Filtra pela unidade de transferência regional." /><select value={filters.utr} onChange={(event) => setFilters({ ...filters, utr: event.target.value })}><option value="">Todas</option>{optionValues(rows, 'utr').map((value) => <option key={value}>{value}</option>)}</select></label>
             </section>
 
             <section className="kpis">
               <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
               <Metric title="Meta de horas" value={formatNumber(summary.targetTotal, 0)} hint="Planejado" tooltip="Total de horas planejadas no Admin para este período." />
               <Metric title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Entregue vs meta" strong tooltip="Percentual de horas entregues em relação ao planejado." />
-              <Metric title="Tempo online" value={formatPercent(summary.avgOnline)} hint="Média" tooltip="Média do tempo online dos entregadores no período." />
+              <Metric title="Pedidos" value={formatNumber(summary.pedidos, 0)} hint="Total no período" tooltip="Soma da coluna pedidos no período filtrado." />
               <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
             </section>
 
@@ -647,7 +657,7 @@ export function App() {
             <div>
               <p className="eyebrow" style={{ marginBottom: '10px' }}>Colunas obrigatórias na planilha</p>
               <div className="importFields">
-                {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
+                {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'pedidos', 'total_hours_scheduled'].map((field) => (
                   <span key={field}>{field}</span>
                 ))}
               </div>
@@ -751,14 +761,45 @@ function Metric({ title, value, hint, strong, tooltip }: { title: string; value:
 }
 
 function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; isSingleDayView: boolean }) {
-  const [hoursSort, setHoursSort] = useState<'desc' | 'asc'>('desc')
+  const [sort, setSort] = useState<{ key: DeliverySortKey; direction: SortDirection }>({ key: 'delivered', direction: 'desc' })
+
+  function toggleSort(key: DeliverySortKey) {
+    setSort((current) => {
+      if (current.key !== key) return { key, direction: 'desc' }
+      return { key, direction: current.direction === 'desc' ? 'asc' : 'desc' }
+    })
+  }
 
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
-      const diff = a.delivered_hours - b.delivered_hours
-      return hoursSort === 'asc' ? diff : -diff
+      const valueA = sort.key === 'online' ? a.online_time_pct : sort.key === 'utr' ? a.utr : a.delivered_hours
+      const valueB = sort.key === 'online' ? b.online_time_pct : sort.key === 'utr' ? b.utr : b.delivered_hours
+
+      if (valueA === null && valueB === null) return 0
+      if (valueA === null) return 1
+      if (valueB === null) return -1
+
+      const diff = valueA - valueB
+      return sort.direction === 'asc' ? diff : -diff
     })
-  }, [hoursSort, rows])
+  }, [rows, sort])
+
+  function SortHeader({ label, sortKey }: { label: string; sortKey: DeliverySortKey }) {
+    const active = sort.key === sortKey
+    const nextDirection = active && sort.direction === 'desc' ? 'menor para maior' : 'maior para menor'
+
+    return (
+      <button
+        type="button"
+        className={clsx('sortHeader', active && 'active')}
+        onClick={() => toggleSort(sortKey)}
+        aria-label={`Ordenar ${label} do ${nextDirection}`}
+      >
+        {label}
+        <span>{active ? (sort.direction === 'desc' ? '↓' : '↑') : '↕'}</span>
+      </button>
+    )
+  }
 
   return (
     <section className="panel tablePanel">
@@ -768,12 +809,6 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           <h2>Entregadores</h2>
         </div>
         <div className="tableActions">
-          <label>Ordenar horas
-            <select value={hoursSort} onChange={(event) => setHoursSort(event.target.value as 'desc' | 'asc')}>
-              <option value="desc">Maior para menor</option>
-              <option value="asc">Menor para maior</option>
-            </select>
-          </label>
           <span><Clock3 size={14} /> {isSingleDayView ? 'Detalhes do dia' : 'Consolidado no período'}</span>
         </div>
       </div>
@@ -785,10 +820,10 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
               <th>ID</th>
               <th>Parceiro</th>
               <th>Turno</th>
-              <th>Online %</th>
-              <th>UTR</th>
+              <th><SortHeader label="Online %" sortKey="online" /></th>
+              <th><SortHeader label="UTR" sortKey="utr" /></th>
               <th>Modal</th>
-              <th>Horas entregues</th>
+              <th><SortHeader label="Horas entregues" sortKey="delivered" /></th>
             </tr>
           </thead>
           <tbody>

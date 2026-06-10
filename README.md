@@ -12,6 +12,7 @@ Formatos de importacao aceitos: `.xlsx` e `.csv`.
 - `NOME`: coluna `Conc`
 - `ID`: coluna `courier_id_txt`
 - `MODAL`: coluna `modal`
+- `PEDIDOS`: coluna `pedidos`
 - `HORAS ENTREGUES`: coluna `total_hours_scheduled`
 
 ## Rodar localmente

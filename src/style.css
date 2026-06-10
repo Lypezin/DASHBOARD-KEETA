@@ -489,16 +489,6 @@ select:focus {
   flex-wrap: wrap;
 }
 
-.tableActions label {
-  min-width: 178px;
-}
-
-.tableActions select {
-  height: 34px;
-  padding: 0 10px;
-  background: rgba(255, 255, 255, 0.82);
-}
-
 .tableActions > span {
   display: inline-flex;
   align-items: center;
@@ -561,6 +551,35 @@ th {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.sortHeader {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  transition: color 180ms var(--ease);
+}
+
+.sortHeader span {
+  color: rgba(255, 204, 0, 0.58);
+  font-size: 12px;
+  line-height: 1;
+  transition: color 180ms var(--ease), transform 180ms var(--ease-out);
+}
+
+.sortHeader:hover span,
+.sortHeader.active span {
+  color: var(--keeta-yellow);
+  transform: translateY(-1px);
 }
 
 tbody tr {

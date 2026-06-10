@@ -7,6 +7,7 @@ export type DeliveryRow = {
   conc: string
   courier_id_txt: string
   modal: string
+  pedidos: number
   target_hours_value: number
   total_hours_scheduled_value: number
   delivered_hours: number
@@ -37,7 +38,7 @@ export type Filters = {
   weekYear: string
   weekNumber: string
   name: string
+  courierId: string
   turno: string
   modal: string
-  utr: string
 }
