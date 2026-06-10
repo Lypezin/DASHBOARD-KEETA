@@ -12,11 +12,9 @@ import {
   RefreshCw,
   Save,
   Search,
-  Shield,
   SlidersHorizontal,
   Target,
   Upload,
-  Zap,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { addDays, format, getDaysInMonth } from 'date-fns'
@@ -202,7 +200,6 @@ export function App() {
       setRows(data.rows)
       setTargets(data.targets)
       setShifts(data.shifts.length ? data.shifts : defaultShifts)
-      setStatus(`${data.rows.length} registros carregados`)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Não foi possível carregar os dados')
     } finally {
@@ -649,19 +646,6 @@ export function App() {
               <strong>{loading ? 'Processando…' : 'Clique para selecionar o arquivo'}</strong>
               <span>Arraste ou selecione um arquivo XLSX ou CSV</span>
             </label>
-            <div className="importChecklist">
-              <span><Zap size={17} /> Calcula horas automaticamente</span>
-              <span><Shield size={17} /> Mantém backup dos dados originais</span>
-              <span><RefreshCw size={17} /> Atualiza o painel ao finalizar</span>
-            </div>
-            <div>
-              <p className="eyebrow" style={{ marginBottom: '10px' }}>Colunas obrigatórias na planilha</p>
-              <div className="importFields">
-                {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'pedidos', 'total_hours_scheduled'].map((field) => (
-                  <span key={field}>{field}</span>
-                ))}
-              </div>
-            </div>
           </section>
         )}
 

@@ -609,7 +609,7 @@ td small {
 
 .importStage {
   position: relative;
-  min-height: 540px;
+  min-height: 420px;
   border-radius: var(--radius);
   padding: 40px;
   overflow: hidden;
@@ -629,8 +629,7 @@ td small {
 }
 
 .importHero,
-.premiumDrop,
-.importChecklist {
+.premiumDrop {
   position: relative;
   z-index: 1;
 }
@@ -730,65 +729,6 @@ td small {
 
 .fileDrop input {
   display: none;
-}
-
-.importChecklist {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.importChecklist span {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
-  padding: 14px 16px;
-  border: 1px solid rgba(21, 18, 10, 0.06);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--ink-2);
-  font-size: 13.5px;
-  font-weight: 600;
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
-  box-shadow: 0 2px 8px rgba(21, 18, 10, 0.04);
-}
-
-.importChecklist span:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(21, 18, 10, 0.08);
-}
-
-.importChecklist svg {
-  color: var(--green);
-  flex: 0 0 auto;
-}
-
-.importFields {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.importFields span {
-  padding: 7px 14px;
-  border: 1px solid rgba(21, 18, 10, 0.08);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--ink-2);
-  font-size: 12px;
-  font-weight: 700;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  letter-spacing: -0.01em;
-  transition: background 200ms var(--ease), transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
-}
-
-.importFields span:hover {
-  background: rgba(255, 204, 0, 0.18);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 204, 0, 0.12);
 }
 
 /* ─── Buttons ───────────────────────────────────── */
@@ -1173,7 +1113,6 @@ td small {
 
   .filters,
   .kpis,
-  .importChecklist,
   .adminSelectors {
     grid-template-columns: 1fr;
   }
