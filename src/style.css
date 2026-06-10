@@ -374,6 +374,66 @@ label {
   opacity: 0.42;
 }
 
+.activeFilters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -6px 0 18px;
+  padding: 0 2px;
+  animation: fadeUp 280ms var(--ease-out) both;
+}
+
+.activeFilters > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.activeFilters > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.activeFilters button {
+  min-height: 32px;
+  border: 1px solid rgba(21, 18, 10, 0.10);
+  border-radius: 999px;
+  padding: 6px 9px 6px 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 248, 216, 0.82)),
+    rgba(255, 255, 255, 0.80);
+  box-shadow: 0 8px 18px rgba(21, 18, 10, 0.06);
+  font-size: 12px;
+  font-weight: 650;
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease), box-shadow 180ms var(--ease-out);
+}
+
+.activeFilters button strong {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.activeFilters button svg {
+  color: var(--muted);
+}
+
+.activeFilters button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(21, 18, 10, 0.20);
+  box-shadow: 0 12px 24px rgba(21, 18, 10, 0.10);
+}
+
 input,
 select {
   width: 100%;
@@ -1397,6 +1457,11 @@ td small {
   .kpis,
   .adminSelectors {
     grid-template-columns: 1fr;
+  }
+
+  .activeFilters {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .panelHeader {

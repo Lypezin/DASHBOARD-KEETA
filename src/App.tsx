@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Bike,
@@ -202,6 +202,8 @@ export function App() {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const deferredNameFilter = useDeferredValue(filters.name)
+  const deferredCourierIdFilter = useDeferredValue(filters.courierId)
 
   async function refreshData() {
     setLoading(true)
@@ -307,13 +309,13 @@ export function App() {
     return rows.filter((row) => {
       const dateOk = (!effectiveRange.startDate || (row.delivery_date ?? '') >= effectiveRange.startDate)
         && (!effectiveRange.endDate || (row.delivery_date ?? '') <= effectiveRange.endDate)
-      const nameOk = !filters.name || row.conc.toLowerCase().includes(filters.name.toLowerCase())
-      const idOk = !filters.courierId || row.courier_id_txt.toLowerCase().includes(filters.courierId.toLowerCase())
+      const nameOk = !deferredNameFilter || row.conc.toLowerCase().includes(deferredNameFilter.toLowerCase())
+      const idOk = !deferredCourierIdFilter || row.courier_id_txt.toLowerCase().includes(deferredCourierIdFilter.toLowerCase())
       const turnoOk = !filters.turno || row.turno === filters.turno
       const modalOk = !filters.modal || row.modal === filters.modal
       return dateOk && nameOk && idOk && turnoOk && modalOk
     })
-  }, [effectiveRange.endDate, effectiveRange.startDate, filters, rows])
+  }, [deferredCourierIdFilter, deferredNameFilter, effectiveRange.endDate, effectiveRange.startDate, filters.modal, filters.turno, rows])
 
   const summary = useMemo(() => {
     const delivered = filteredRows.reduce((sum, row) => sum + Number(row.delivered_hours || 0), 0)
@@ -392,6 +394,18 @@ export function App() {
 
   const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
   const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: keyof Filters; label: string; value: string }> = []
+
+    if (filters.startDate) chips.push({ key: 'startDate', label: 'Início', value: formatDisplayDate(filters.startDate) })
+    if (filters.endDate) chips.push({ key: 'endDate', label: 'Fim', value: formatDisplayDate(filters.endDate) })
+    if (filters.name) chips.push({ key: 'name', label: 'Parceiro', value: filters.name })
+    if (filters.courierId) chips.push({ key: 'courierId', label: 'ID', value: filters.courierId })
+    if (filters.turno) chips.push({ key: 'turno', label: 'Turno', value: filters.turno })
+    if (filters.modal) chips.push({ key: 'modal', label: 'Modal', value: filters.modal })
+
+    return chips
+  }, [filters.courierId, filters.endDate, filters.modal, filters.name, filters.startDate, filters.turno])
 
   const deliveryTableRows = useMemo(() => {
     if (isSingleDayView) {
@@ -639,6 +653,26 @@ export function App() {
                 Limpar filtros
               </button>
             </section>
+
+            {activeFilterChips.length > 0 && (
+              <section className="activeFilters" aria-label="Filtros ativos">
+                <span>Filtros ativos</span>
+                <div>
+                  {activeFilterChips.map((chip) => (
+                    <button
+                      type="button"
+                      key={chip.key}
+                      onClick={() => setFilters((current) => ({ ...current, [chip.key]: '' }))}
+                      aria-label={`Remover filtro ${chip.label}`}
+                    >
+                      <strong>{chip.label}</strong>
+                      {chip.value}
+                      <X size={13} />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="kpis">
               <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
