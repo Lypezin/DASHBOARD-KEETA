@@ -84,6 +84,7 @@ const emptyFilters: Filters = {
 
 const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
 const DashboardCharts = lazy(() => import('./Charts').then((module) => ({ default: module.DashboardCharts })))
+const tablePageSize = 250
 
 type DeliveryTableRow = {
   key: string
@@ -773,6 +774,7 @@ function Metric({ title, value, hint, strong, tooltip }: { title: string; value:
 
 function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; isSingleDayView: boolean }) {
   const [sort, setSort] = useState<{ key: DeliverySortKey; direction: SortDirection }>({ key: 'delivered', direction: 'desc' })
+  const [visibleCount, setVisibleCount] = useState(tablePageSize)
 
   function toggleSort(key: DeliverySortKey) {
     setSort((current) => {
@@ -780,6 +782,10 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
       return { key, direction: current.direction === 'desc' ? 'asc' : 'desc' }
     })
   }
+
+  useEffect(() => {
+    setVisibleCount(tablePageSize)
+  }, [rows, sort])
 
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -794,6 +800,9 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
       return sort.direction === 'asc' ? diff : -diff
     })
   }, [rows, sort])
+
+  const visibleRows = useMemo(() => sortedRows.slice(0, visibleCount), [sortedRows, visibleCount])
+  const hiddenRows = Math.max(sortedRows.length - visibleRows.length, 0)
 
   function SortHeader({ label, sortKey }: { label: string; sortKey: DeliverySortKey }) {
     const active = sort.key === sortKey
@@ -849,7 +858,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
                 </td>
               </tr>
             )}
-            {sortedRows.map((row) => (
+            {visibleRows.map((row) => (
               <tr key={row.key}>
                 <td>{row.dateLabel}</td>
                 <td>{row.courier_id_txt}</td>
@@ -867,6 +876,14 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           </tbody>
         </table>
       </div>
+      {hiddenRows > 0 && (
+        <div className="tableLoadMore">
+          <span>Mostrando {formatNumber(visibleRows.length)} de {formatNumber(sortedRows.length)} linhas para manter a navegação fluida.</span>
+          <button type="button" onClick={() => setVisibleCount((current) => current + tablePageSize)}>
+            Ver mais {formatNumber(Math.min(tablePageSize, hiddenRows))}
+          </button>
+        </div>
+      )}
     </section>
   )
 }

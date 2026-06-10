@@ -761,6 +761,42 @@ td small {
   font-weight: 600;
 }
 
+.tableLoadMore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid rgba(21, 18, 10, 0.07);
+  background:
+    linear-gradient(90deg, rgba(255, 204, 0, 0.12), rgba(255, 255, 255, 0.80) 58%),
+    rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.tableLoadMore button {
+  border: 1px solid rgba(21, 18, 10, 0.12);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: var(--ink);
+  color: var(--keeta-yellow);
+  font-weight: 800;
+  box-shadow: 0 12px 22px rgba(21, 18, 10, 0.12);
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background 180ms var(--ease);
+}
+
+.tableLoadMore button:hover {
+  transform: translateY(-1px);
+  background: #211d11;
+  box-shadow: 0 16px 28px rgba(21, 18, 10, 0.16);
+}
+
+.tableLoadMore button:active {
+  transform: translateY(0);
+}
+
 /* ─── Import stage ──────────────────────────────── */
 
 .importStage {

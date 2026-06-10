@@ -15,7 +15,26 @@ export const supabase = isSupabaseConfigured
     })
   : null
 
-async function fetchAllRows<T>(table: string, orderColumn: string) {
+const dashboardRowsSelect = [
+  'id',
+  'delivery_date',
+  'turno',
+  'online_time_pct',
+  'utr',
+  'conc',
+  'courier_id_txt',
+  'modal',
+  'pedidos',
+  'target_hours_value',
+  'total_hours_scheduled_value',
+  'delivered_hours',
+  'imported_at',
+].join(',')
+
+const dailyTargetsSelect = 'id,target_date,turno,required_hours,notes'
+const shiftConfigSelect = 'turno,expected_hours'
+
+async function fetchAllRows<T>(table: string, orderColumn: string, selectColumns = '*') {
   if (!supabase) return [] as T[]
 
   const pageSize = 1000
@@ -25,7 +44,7 @@ async function fetchAllRows<T>(table: string, orderColumn: string) {
     const to = from + pageSize - 1
     const { data, error } = await supabase
       .from(table)
-      .select('*')
+      .select(selectColumns)
       .order(orderColumn, { ascending: false, nullsFirst: false })
       .range(from, to)
 
@@ -43,9 +62,9 @@ export async function fetchDashboardData() {
   }
 
   const [rows, targetsResult, shiftsResult] = await Promise.all([
-    fetchAllRows<DeliveryRow>('keeta_delivery_rows', 'delivery_date'),
-    fetchAllRows<DailyTarget>('keeta_daily_targets', 'target_date'),
-    supabase.from('keeta_shift_config').select('*').order('turno'),
+    fetchAllRows<DeliveryRow>('keeta_delivery_rows', 'delivery_date', dashboardRowsSelect),
+    fetchAllRows<DailyTarget>('keeta_daily_targets', 'target_date', dailyTargetsSelect),
+    supabase.from('keeta_shift_config').select(shiftConfigSelect).order('turno'),
   ])
 
   if (shiftsResult.error) throw shiftsResult.error
