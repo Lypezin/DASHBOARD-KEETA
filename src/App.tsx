@@ -22,7 +22,7 @@ import {
 import clsx from 'clsx'
 import { addDays, format, getDaysInMonth } from 'date-fns'
 import { fetchDashboardData, importDeliveryRows, upsertDailyTargets, upsertShiftConfig } from './supabase'
-import type { DailyTarget, DeliveryRow, Filters, ShiftConfig } from './types'
+import type { DailyTarget, DashboardRow, Filters, ShiftConfig } from './types'
 
 const defaultShifts: ShiftConfig[] = [
   { turno: 'Almoço', expected_hours: 4 },
@@ -151,7 +151,7 @@ function singleOrMultiple(values: Set<string>) {
   return 'Multiplos'
 }
 
-function optionValues(rows: DeliveryRow[], key: keyof DeliveryRow) {
+function optionValues(rows: DashboardRow[], key: keyof DashboardRow) {
   return Array.from(new Set(rows.map((row) => String(row[key] ?? '').trim()).filter(Boolean))).sort()
 }
 
@@ -191,7 +191,7 @@ function formatDisplayDate(value: string) {
 }
 
 export function App() {
-  const [rows, setRows] = useState<DeliveryRow[]>([])
+  const [rows, setRows] = useState<DashboardRow[]>([])
   const [targets, setTargets] = useState<DailyTarget[]>([])
   const [shifts, setShifts] = useState<ShiftConfig[]>(defaultShifts)
   const [filters, setFilters] = useState<Filters>(emptyFilters)
@@ -204,6 +204,8 @@ export function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const deferredNameFilter = useDeferredValue(filters.name)
   const deferredCourierIdFilter = useDeferredValue(filters.courierId)
+  const normalizedNameFilter = useMemo(() => deferredNameFilter.trim().toLowerCase(), [deferredNameFilter])
+  const normalizedCourierIdFilter = useMemo(() => deferredCourierIdFilter.trim().toLowerCase(), [deferredCourierIdFilter])
 
   async function refreshData() {
     setLoading(true)
@@ -309,13 +311,13 @@ export function App() {
     return rows.filter((row) => {
       const dateOk = (!effectiveRange.startDate || (row.delivery_date ?? '') >= effectiveRange.startDate)
         && (!effectiveRange.endDate || (row.delivery_date ?? '') <= effectiveRange.endDate)
-      const nameOk = !deferredNameFilter || row.conc.toLowerCase().includes(deferredNameFilter.toLowerCase())
-      const idOk = !deferredCourierIdFilter || row.courier_id_txt.toLowerCase().includes(deferredCourierIdFilter.toLowerCase())
+      const nameOk = !normalizedNameFilter || row.conc.toLowerCase().includes(normalizedNameFilter)
+      const idOk = !normalizedCourierIdFilter || row.courier_id_txt.toLowerCase().includes(normalizedCourierIdFilter)
       const turnoOk = !filters.turno || row.turno === filters.turno
       const modalOk = !filters.modal || row.modal === filters.modal
       return dateOk && nameOk && idOk && turnoOk && modalOk
     })
-  }, [deferredCourierIdFilter, deferredNameFilter, effectiveRange.endDate, effectiveRange.startDate, filters.modal, filters.turno, rows])
+  }, [effectiveRange.endDate, effectiveRange.startDate, filters.modal, filters.turno, normalizedCourierIdFilter, normalizedNameFilter, rows])
 
   const summary = useMemo(() => {
     const delivered = filteredRows.reduce((sum, row) => sum + Number(row.delivered_hours || 0), 0)

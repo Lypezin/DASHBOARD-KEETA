@@ -14,6 +14,20 @@ export type DeliveryRow = {
   imported_at: string
 }
 
+export type DashboardRow = Pick<
+  DeliveryRow,
+  | 'id'
+  | 'delivery_date'
+  | 'turno'
+  | 'online_time_pct'
+  | 'utr'
+  | 'conc'
+  | 'courier_id_txt'
+  | 'modal'
+  | 'pedidos'
+  | 'delivered_hours'
+>
+
 export type DailyTarget = {
   id?: string
   target_date: string

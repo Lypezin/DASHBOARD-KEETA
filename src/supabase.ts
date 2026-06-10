@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { DailyTarget, DeliveryRow, ParsedImportRow, ShiftConfig } from './types'
+import type { DailyTarget, DashboardRow, ParsedImportRow, ShiftConfig } from './types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined
@@ -25,10 +25,7 @@ const dashboardRowsSelect = [
   'courier_id_txt',
   'modal',
   'pedidos',
-  'target_hours_value',
-  'total_hours_scheduled_value',
   'delivered_hours',
-  'imported_at',
 ].join(',')
 
 const dailyTargetsSelect = 'id,target_date,turno,required_hours,notes'
@@ -58,11 +55,11 @@ async function fetchAllRows<T>(table: string, orderColumn: string, selectColumns
 
 export async function fetchDashboardData() {
   if (!supabase) {
-    return { rows: [] as DeliveryRow[], targets: [] as DailyTarget[], shifts: [] as ShiftConfig[] }
+    return { rows: [] as DashboardRow[], targets: [] as DailyTarget[], shifts: [] as ShiftConfig[] }
   }
 
   const [rows, targetsResult, shiftsResult] = await Promise.all([
-    fetchAllRows<DeliveryRow>('keeta_delivery_rows', 'delivery_date', dashboardRowsSelect),
+    fetchAllRows<DashboardRow>('keeta_delivery_rows', 'delivery_date', dashboardRowsSelect),
     fetchAllRows<DailyTarget>('keeta_daily_targets', 'target_date', dailyTargetsSelect),
     supabase.from('keeta_shift_config').select(shiftConfigSelect).order('turno'),
   ])
