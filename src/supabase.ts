@@ -74,8 +74,8 @@ export async function fetchDashboardData() {
 }
 
 export async function importDeliveryRows(fileName: string, rows: ParsedImportRow[]) {
-  if (!supabase) throw new Error('Supabase nao configurado.')
-  if (rows.length === 0) throw new Error('Nenhuma linha valida encontrada.')
+  if (!supabase) throw new Error('Supabase não configurado.')
+  if (rows.length === 0) throw new Error('Nenhuma linha válida encontrada.')
 
   const { data: batch, error: batchError } = await supabase
     .from('keeta_import_batches')
@@ -114,7 +114,7 @@ export async function importDeliveryRows(fileName: string, rows: ParsedImportRow
 }
 
 export async function upsertDailyTarget(target: DailyTarget) {
-  if (!supabase) throw new Error('Supabase nao configurado.')
+  if (!supabase) throw new Error('Supabase não configurado.')
   const { error } = await supabase.from('keeta_daily_targets').upsert(
     {
       target_date: target.target_date,
@@ -128,7 +128,7 @@ export async function upsertDailyTarget(target: DailyTarget) {
 }
 
 export async function upsertDailyTargets(targets: DailyTarget[]) {
-  if (!supabase) throw new Error('Supabase nao configurado.')
+  if (!supabase) throw new Error('Supabase não configurado.')
   const payload = targets.map((target) => ({
     target_date: target.target_date,
     turno: target.turno || null,
@@ -140,7 +140,7 @@ export async function upsertDailyTargets(targets: DailyTarget[]) {
 }
 
 export async function upsertShiftConfig(shifts: ShiftConfig[]) {
-  if (!supabase) throw new Error('Supabase nao configurado.')
+  if (!supabase) throw new Error('Supabase não configurado.')
   const { error } = await supabase.from('keeta_shift_config').upsert(shifts, { onConflict: 'turno' })
   if (error) throw error
 }

@@ -96,7 +96,7 @@ export async function parseWorkbook(file: File): Promise<ParsedImportRow[]> {
     const matrix = await readSheet(file)
     jsonRows = rowsFromMatrix(matrix)
   } else {
-    throw new Error('Formato nao suportado. Salve a planilha como .xlsx ou .csv.')
+    throw new Error('Formato não suportado. Salve a planilha como .xlsx ou .csv.')
   }
 
   return jsonRows

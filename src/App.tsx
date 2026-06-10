@@ -148,7 +148,7 @@ function singleOrMultiple(values: Set<string>) {
   const cleanValues = Array.from(values).filter(Boolean)
   if (cleanValues.length === 0) return '-'
   if (cleanValues.length === 1) return cleanValues[0]
-  return 'Multiplos'
+  return 'Múltiplos'
 }
 
 function optionValues(rows: DashboardRow[], key: keyof DashboardRow) {
