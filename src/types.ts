@@ -14,20 +14,6 @@ export type DeliveryRow = {
   imported_at: string
 }
 
-export type DashboardRow = Pick<
-  DeliveryRow,
-  | 'id'
-  | 'delivery_date'
-  | 'turno'
-  | 'online_time_pct'
-  | 'utr'
-  | 'conc'
-  | 'courier_id_txt'
-  | 'modal'
-  | 'pedidos'
-  | 'delivered_hours'
->
-
 export type DailyTarget = {
   id?: string
   target_date: string
@@ -55,4 +41,62 @@ export type Filters = {
   courierId: string
   turno: string
   modal: string
+}
+
+export type AvailableWeek = {
+  key: string
+  year: number
+  weekNumber: number
+  startDate: string
+  endDate: string
+  label?: string
+}
+
+export type DashboardSummary = {
+  delivered: number
+  pedidos: number
+  couriers: number
+  targetTotal: number
+  targetAdherence: number
+}
+
+export type DashboardTurnoRow = {
+  turno: string
+  delivered: number
+  target: number
+  online: number
+}
+
+export type DashboardModalRow = {
+  name: string
+  value: number
+}
+
+export type DashboardTableRow = {
+  key: string
+  firstDate: string | null
+  lastDate: string | null
+  courier_id_txt: string
+  conc: string
+  turno: string
+  online_time_pct: number
+  utr: number | null
+  modal: string
+  pedidos: number
+  delivered_hours: number
+  sourceRows: number
+}
+
+export type DashboardMeta = {
+  available_weeks: AvailableWeek[]
+  turnos: string[]
+  modals: string[]
+}
+
+export type DashboardPayload = {
+  summary: DashboardSummary
+  byTurno: DashboardTurnoRow[]
+  byModal: DashboardModalRow[]
+  tableRows: DashboardTableRow[]
+  tableTotal: number
 }

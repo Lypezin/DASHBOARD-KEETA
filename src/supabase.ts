@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { DailyTarget, DashboardRow, ParsedImportRow, ShiftConfig } from './types'
+import type { DailyTarget, DashboardMeta, DashboardPayload, ParsedImportRow, ShiftConfig } from './types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY as string | undefined
@@ -14,19 +14,6 @@ export const supabase = isSupabaseConfigured
       },
     })
   : null
-
-const dashboardRowsSelect = [
-  'id',
-  'delivery_date',
-  'turno',
-  'online_time_pct',
-  'utr',
-  'conc',
-  'courier_id_txt',
-  'modal',
-  'pedidos',
-  'delivered_hours',
-].join(',')
 
 const dailyTargetsSelect = 'id,target_date,turno,required_hours,notes'
 const shiftConfigSelect = 'turno,expected_hours'
@@ -55,22 +42,66 @@ async function fetchAllRows<T>(table: string, orderColumn: string, selectColumns
 
 export async function fetchDashboardData() {
   if (!supabase) {
-    return { rows: [] as DashboardRow[], targets: [] as DailyTarget[], shifts: [] as ShiftConfig[] }
+    return {
+      meta: { available_weeks: [], turnos: [], modals: [] } as DashboardMeta,
+      targets: [] as DailyTarget[],
+      shifts: [] as ShiftConfig[],
+    }
   }
 
-  const [rows, targetsResult, shiftsResult] = await Promise.all([
-    fetchAllRows<DashboardRow>('keeta_delivery_rows', 'delivery_date', dashboardRowsSelect),
+  const [metaResult, targetsResult, shiftsResult] = await Promise.all([
+    supabase.rpc('keeta_dashboard_meta'),
     fetchAllRows<DailyTarget>('keeta_daily_targets', 'target_date', dailyTargetsSelect),
     supabase.from('keeta_shift_config').select(shiftConfigSelect).order('turno'),
   ])
 
+  if (metaResult.error) throw metaResult.error
   if (shiftsResult.error) throw shiftsResult.error
 
   return {
-    rows,
+    meta: (metaResult.data ?? { available_weeks: [], turnos: [], modals: [] }) as DashboardMeta,
     targets: targetsResult,
     shifts: (shiftsResult.data ?? []) as ShiftConfig[],
   }
+}
+
+export async function fetchDashboardPayload(params: {
+  startDate: string
+  endDate: string
+  name: string
+  courierId: string
+  turno: string
+  modal: string
+  sortKey: 'online' | 'utr' | 'delivered'
+  sortDirection: 'asc' | 'desc'
+  limit: number
+  offset: number
+}) {
+  const emptyPayload: DashboardPayload = {
+    summary: { delivered: 0, pedidos: 0, couriers: 0, targetTotal: 0, targetAdherence: 0 },
+    byTurno: [],
+    byModal: [],
+    tableRows: [],
+    tableTotal: 0,
+  }
+
+  if (!supabase) return emptyPayload
+
+  const { data, error } = await supabase.rpc('keeta_dashboard_payload', {
+    p_start_date: params.startDate || null,
+    p_end_date: params.endDate || null,
+    p_name: params.name || null,
+    p_courier_id: params.courierId || null,
+    p_turno: params.turno || null,
+    p_modal: params.modal || null,
+    p_sort_key: params.sortKey,
+    p_sort_direction: params.sortDirection,
+    p_limit: params.limit,
+    p_offset: params.offset,
+  })
+
+  if (error) throw error
+  return (data ?? emptyPayload) as DashboardPayload
 }
 
 export async function importDeliveryRows(fileName: string, rows: ParsedImportRow[]) {

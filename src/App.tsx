@@ -1,4 +1,4 @@
-import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Bike,
@@ -21,8 +21,8 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { addDays, format, getDaysInMonth } from 'date-fns'
-import { fetchDashboardData, importDeliveryRows, upsertDailyTargets, upsertShiftConfig } from './supabase'
-import type { DailyTarget, DashboardRow, Filters, ShiftConfig } from './types'
+import { fetchDashboardData, fetchDashboardPayload, importDeliveryRows, upsertDailyTargets, upsertShiftConfig } from './supabase'
+import type { AvailableWeek, DailyTarget, DashboardPayload, Filters, ShiftConfig } from './types'
 
 const defaultShifts: ShiftConfig[] = [
   { turno: 'Almoço', expected_hours: 4 },
@@ -30,6 +30,22 @@ const defaultShifts: ShiftConfig[] = [
   { turno: 'Jantar', expected_hours: 4 },
   { turno: 'Ceia', expected_hours: 2 },
 ]
+
+const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
+const DashboardCharts = lazy(() => import('./Charts').then((module) => ({ default: module.DashboardCharts })))
+const tablePageSize = 250
+
+type DeliverySortKey = 'online' | 'utr' | 'delivered'
+type SortDirection = 'desc' | 'asc'
+type Notice = { type: 'success' | 'error'; message: string }
+
+const emptyDashboardPayload: DashboardPayload = {
+  summary: { delivered: 0, pedidos: 0, couriers: 0, targetTotal: 0, targetAdherence: 0 },
+  byTurno: [],
+  byModal: [],
+  tableRows: [],
+  tableTotal: 0,
+}
 
 function toIsoDate(date: Date) {
   return format(date, 'yyyy-MM-dd')
@@ -53,11 +69,8 @@ function getWeekInfo(date = new Date()) {
   const calendarYear = weekStart.getFullYear()
   let year = calendarYear
 
-  if (weekStart >= firstWeekStart(calendarYear + 1)) {
-    year = calendarYear + 1
-  } else if (weekStart < firstWeekStart(calendarYear)) {
-    year = calendarYear - 1
-  }
+  if (weekStart >= firstWeekStart(calendarYear + 1)) year = calendarYear + 1
+  else if (weekStart < firstWeekStart(calendarYear)) year = calendarYear - 1
 
   const start = firstWeekStart(year)
   const weekNumber = Math.floor((weekStart.getTime() - start.getTime()) / 604800000) + 1
@@ -66,10 +79,7 @@ function getWeekInfo(date = new Date()) {
 
 function getWeekRange(year: number, weekNumber: number) {
   const start = addDays(firstWeekStart(year), (weekNumber - 1) * 7)
-  return {
-    startDate: toIsoDate(start),
-    endDate: toIsoDate(addDays(start, 6)),
-  }
+  return { startDate: toIsoDate(start), endDate: toIsoDate(addDays(start, 6)) }
 }
 
 const currentWeek = getWeekInfo()
@@ -83,41 +93,6 @@ const emptyFilters: Filters = {
   courierId: '',
   turno: '',
   modal: '',
-}
-
-const modalColors = ['#141414', '#ffcc00', '#2e7d32', '#e6502e', '#4776e6', '#78716c']
-const DashboardCharts = lazy(() => import('./Charts').then((module) => ({ default: module.DashboardCharts })))
-const tablePageSize = 250
-
-type DeliveryTableRow = {
-  key: string
-  dateLabel: string
-  courier_id_txt: string
-  conc: string
-  turno: string
-  online_time_pct: number
-  utr: number | null
-  modal: string
-  pedidos: number
-  delivered_hours: number
-  sourceRows: number
-}
-
-type DeliverySortKey = 'online' | 'utr' | 'delivered'
-type SortDirection = 'desc' | 'asc'
-
-type AvailableWeek = {
-  key: string
-  year: number
-  weekNumber: number
-  startDate: string
-  endDate: string
-  label: string
-}
-
-type Notice = {
-  type: 'success' | 'error'
-  message: string
 }
 
 function formatNumber(value: number, digits = 0) {
@@ -144,17 +119,6 @@ function formatDecimal(value: number | null, digits = 2) {
   return formatNumber(value, digits)
 }
 
-function singleOrMultiple(values: Set<string>) {
-  const cleanValues = Array.from(values).filter(Boolean)
-  if (cleanValues.length === 0) return '-'
-  if (cleanValues.length === 1) return cleanValues[0]
-  return 'Múltiplos'
-}
-
-function optionValues(rows: DashboardRow[], key: keyof DashboardRow) {
-  return Array.from(new Set(rows.map((row) => String(row[key] ?? '').trim()).filter(Boolean))).sort()
-}
-
 function normalizedTextKey(value: string) {
   return value
     .trim()
@@ -166,15 +130,12 @@ function normalizedTextKey(value: string) {
 
 function uniqueNormalizedOptions(values: string[]) {
   const options = new Map<string, string>()
-
   for (const rawValue of values) {
     const value = rawValue.trim()
     if (!value) continue
-
     const key = normalizedTextKey(value)
     if (!options.has(key)) options.set(key, value)
   }
-
   return Array.from(options.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 }
 
@@ -183,25 +144,39 @@ function formatShortDate(value: string) {
   return `${day}/${month}/${year.slice(2)}`
 }
 
-function formatDisplayDate(value: string) {
+function formatDisplayDate(value: string | null | undefined) {
   if (!value || value === '-') return '-'
   const [year, month, day] = value.split('-')
   if (!year || !month || !day) return value
   return `${day}/${month}/${year}`
 }
 
+function mapWeekLabel(week: AvailableWeek): AvailableWeek {
+  return {
+    ...week,
+    label: `Semana ${week.weekNumber} de ${week.year} · ${formatShortDate(week.startDate)} a ${formatShortDate(week.endDate)}`,
+  }
+}
+
 export function App() {
-  const [rows, setRows] = useState<DashboardRow[]>([])
   const [targets, setTargets] = useState<DailyTarget[]>([])
   const [shifts, setShifts] = useState<ShiftConfig[]>(defaultShifts)
   const [filters, setFilters] = useState<Filters>(emptyFilters)
+  const [availableWeeks, setAvailableWeeks] = useState<AvailableWeek[]>([])
+  const [turnoOptions, setTurnoOptions] = useState<string[]>([])
+  const [modalOptions, setModalOptions] = useState<string[]>([])
+  const [dashboardPayload, setDashboardPayload] = useState<DashboardPayload>(emptyDashboardPayload)
+  const [tableOffset, setTableOffset] = useState(0)
+  const [tableSort, setTableSort] = useState<{ key: DeliverySortKey; direction: SortDirection }>({ key: 'delivered', direction: 'desc' })
   const [adminMonth, setAdminMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [adminTurno, setAdminTurno] = useState('')
   const [monthTargets, setMonthTargets] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState<Notice | null>(null)
   const [loading, setLoading] = useState(false)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
   const deferredNameFilter = useDeferredValue(filters.name)
   const deferredCourierIdFilter = useDeferredValue(filters.courierId)
   const normalizedNameFilter = useMemo(() => deferredNameFilter.trim().toLowerCase(), [deferredNameFilter])
@@ -211,7 +186,9 @@ export function App() {
     setLoading(true)
     try {
       const data = await fetchDashboardData()
-      setRows(data.rows)
+      setAvailableWeeks(data.meta.available_weeks.map(mapWeekLabel))
+      setTurnoOptions(data.meta.turnos)
+      setModalOptions(data.meta.modals)
       setTargets(data.targets)
       setShifts(data.shifts.length ? data.shifts : defaultShifts)
     } catch (error) {
@@ -235,46 +212,18 @@ export function App() {
   }, [adminMonth, adminTurno, targets])
 
   const adminTurnoOptions = useMemo(() => {
-    return uniqueNormalizedOptions([
-      ...optionValues(rows, 'turno'),
-      ...shifts.map((shift) => shift.turno).filter(Boolean),
-    ])
-  }, [rows, shifts])
+    return uniqueNormalizedOptions([...turnoOptions, ...shifts.map((shift) => shift.turno).filter(Boolean)])
+  }, [shifts, turnoOptions])
 
   useEffect(() => {
     if (adminTurnoOptions.length === 0) {
       if (adminTurno) setAdminTurno('')
       return
     }
-
     if (adminTurnoOptions.includes(adminTurno)) return
-
     const canonicalTurno = adminTurnoOptions.find((turno) => normalizedTextKey(turno) === normalizedTextKey(adminTurno))
     setAdminTurno(canonicalTurno ?? adminTurnoOptions[0])
   }, [adminTurno, adminTurnoOptions])
-
-  const availableWeeks = useMemo<AvailableWeek[]>(() => {
-    const weeks = new Map<string, AvailableWeek>()
-
-    for (const row of rows) {
-      if (!row.delivery_date) continue
-      const [year, month, day] = row.delivery_date.split('-').map(Number)
-      const week = getWeekInfo(new Date(year, month - 1, day))
-      const range = getWeekRange(week.year, week.weekNumber)
-      const key = `${week.year}-${String(week.weekNumber).padStart(2, '0')}`
-
-      weeks.set(key, {
-        key,
-        year: week.year,
-        weekNumber: week.weekNumber,
-        startDate: range.startDate,
-        endDate: range.endDate,
-        label: `Semana ${week.weekNumber} de ${week.year} · ${formatShortDate(range.startDate)} a ${formatShortDate(range.endDate)}`,
-      })
-    }
-
-    return Array.from(weeks.values()).sort((a, b) => b.startDate.localeCompare(a.startDate))
-  }, [rows])
 
   useEffect(() => {
     if (availableWeeks.length === 0) return
@@ -282,218 +231,105 @@ export function App() {
     const hasCurrentWeek = availableWeeks.some((week) => week.key === currentKey)
     if (!hasCurrentWeek) {
       const latest = availableWeeks[0]
-      setFilters((current) => ({
-        ...current,
-        weekYear: String(latest.year),
-        weekNumber: String(latest.weekNumber),
-      }))
+      setFilters((current) => ({ ...current, weekYear: String(latest.year), weekNumber: String(latest.weekNumber) }))
     }
   }, [availableWeeks, filters.weekNumber, filters.weekYear])
 
   const effectiveRange = useMemo(() => {
     const hasInterval = Boolean(filters.startDate || filters.endDate)
-    if (hasInterval) {
-      return {
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        label: 'Intervalo personalizado',
-      }
-    }
-
+    if (hasInterval) return { startDate: filters.startDate, endDate: filters.endDate, label: 'Intervalo personalizado' }
     const range = getWeekRange(Number(filters.weekYear), Number(filters.weekNumber))
-    return {
-      ...range,
-      label: `Semana ${filters.weekNumber} de ${filters.weekYear}`,
-    }
+    return { ...range, label: `Semana ${filters.weekNumber} de ${filters.weekYear}` }
   }, [filters.endDate, filters.startDate, filters.weekNumber, filters.weekYear])
 
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const dateOk = (!effectiveRange.startDate || (row.delivery_date ?? '') >= effectiveRange.startDate)
-        && (!effectiveRange.endDate || (row.delivery_date ?? '') <= effectiveRange.endDate)
-      const nameOk = !normalizedNameFilter || row.conc.toLowerCase().includes(normalizedNameFilter)
-      const idOk = !normalizedCourierIdFilter || row.courier_id_txt.toLowerCase().includes(normalizedCourierIdFilter)
-      const turnoOk = !filters.turno || row.turno === filters.turno
-      const modalOk = !filters.modal || row.modal === filters.modal
-      return dateOk && nameOk && idOk && turnoOk && modalOk
-    })
-  }, [effectiveRange.endDate, effectiveRange.startDate, filters.modal, filters.turno, normalizedCourierIdFilter, normalizedNameFilter, rows])
-
-  const summary = useMemo(() => {
-    const delivered = filteredRows.reduce((sum, row) => sum + Number(row.delivered_hours || 0), 0)
-    const avgOnline = filteredRows.length
-      ? filteredRows.reduce((sum, row) => sum + Number(row.online_time_pct || 0), 0) / filteredRows.length
-      : 0
-    const couriers = new Set(filteredRows.map((row) => row.courier_id_txt).filter(Boolean)).size
-    const pedidos = filteredRows.reduce((sum, row) => sum + Number(row.pedidos || 0), 0)
-
-    const targetTotal = targets
-      .filter((target) => {
-        const dateOk = (!effectiveRange.startDate || target.target_date >= effectiveRange.startDate)
-          && (!effectiveRange.endDate || target.target_date <= effectiveRange.endDate)
-        const turnoOk = filters.turno ? target.turno === filters.turno : Boolean(target.turno)
-        return dateOk && turnoOk
+  async function loadDashboardPayload(offset = 0, mode: 'replace' | 'append' = 'replace') {
+    setDashboardLoading(true)
+    try {
+      const payload = await fetchDashboardPayload({
+        startDate: effectiveRange.startDate,
+        endDate: effectiveRange.endDate,
+        name: normalizedNameFilter,
+        courierId: normalizedCourierIdFilter,
+        turno: filters.turno,
+        modal: filters.modal,
+        sortKey: tableSort.key,
+        sortDirection: tableSort.direction,
+        limit: tablePageSize,
+        offset,
       })
-      .reduce((sum, target) => sum + Number(target.required_hours || 0), 0)
 
-    return {
-      delivered,
-      avgOnline,
-      couriers,
-      pedidos,
-      targetTotal,
-      targetAdherence: targetTotal > 0 ? (delivered / targetTotal) * 100 : 0,
+      startTransition(() => {
+        setDashboardPayload((current) => mode === 'append'
+          ? { ...payload, tableRows: [...current.tableRows, ...payload.tableRows] }
+          : payload)
+        setTableOffset(offset + payload.tableRows.length)
+      })
+    } catch (error) {
+      setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Não foi possível carregar a dashboard.' })
+    } finally {
+      setDashboardLoading(false)
     }
-  }, [effectiveRange.endDate, effectiveRange.startDate, filteredRows, filters.turno, targets])
+  }
 
-  const byTurno = useMemo(() => {
-    const grouped = new Map<string, { turno: string; delivered: number; target: number; online: number; rows: number }>()
-    for (const row of filteredRows) {
-      const item = grouped.get(row.turno) ?? { turno: row.turno || 'Sem turno', delivered: 0, target: 0, online: 0, rows: 0 }
-      item.delivered += Number(row.delivered_hours || 0)
-      item.online += Number(row.online_time_pct || 0)
-      item.rows += 1
-      grouped.set(item.turno, item)
-    }
-    for (const target of targets) {
-      const dateOk = (!effectiveRange.startDate || target.target_date >= effectiveRange.startDate)
-        && (!effectiveRange.endDate || target.target_date <= effectiveRange.endDate)
-      if (!dateOk) continue
-      if (filters.turno && target.turno !== filters.turno) continue
-      if (!target.turno) continue
-      const item = grouped.get(target.turno) ?? { turno: target.turno, delivered: 0, target: 0, online: 0, rows: 0 }
-      item.target += Number(target.required_hours || 0)
-      grouped.set(item.turno, item)
-    }
-    const turnoOrder = ['Almoço', 'Lanche', 'Jantar', 'Ceia']
-    return Array.from(grouped.values()).map((item) => ({
-      ...item,
-      online: item.rows ? item.online / item.rows : 0,
-    })).sort((a, b) => {
-      const ai = turnoOrder.indexOf(a.turno)
-      const bi = turnoOrder.indexOf(b.turno)
-      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-    })
-  }, [effectiveRange.endDate, effectiveRange.startDate, filteredRows, filters.turno, targets])
+  useEffect(() => {
+    setTableOffset(0)
+    void loadDashboardPayload(0, 'replace')
+  }, [
+    effectiveRange.startDate,
+    effectiveRange.endDate,
+    filters.modal,
+    filters.turno,
+    normalizedCourierIdFilter,
+    normalizedNameFilter,
+    tableSort.direction,
+    tableSort.key,
+  ])
 
-  const byModal = useMemo(() => {
-    const grouped = new Map<string, number>()
-    for (const row of filteredRows) grouped.set(row.modal || 'Sem modal', (grouped.get(row.modal || 'Sem modal') ?? 0) + row.delivered_hours)
-    return Array.from(grouped, ([name, value]) => ({ name, value }))
-  }, [filteredRows])
+  const summary = dashboardPayload.summary
+  const byTurno = dashboardPayload.byTurno
+  const byModal = dashboardPayload.byModal
+  const targetComparison = useMemo(() => ({
+    delivered: summary.delivered,
+    target: summary.targetTotal,
+    remaining: Math.max(summary.targetTotal - summary.delivered, 0),
+    adherence: summary.targetTotal > 0 ? (summary.delivered / summary.targetTotal) * 100 : 0,
+  }), [summary.delivered, summary.targetTotal])
 
-  const targetComparison = useMemo(() => {
-    const delivered = summary.delivered
-    const target = summary.targetTotal
-    const remaining = Math.max(target - delivered, 0)
-    return {
-      delivered,
-      target,
-      remaining,
-      adherence: target > 0 ? (delivered / target) * 100 : 0,
-    }
-  }, [summary.delivered, summary.targetTotal])
-
-  const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
-  const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
   const hasAvailableWeeks = availableWeeks.length > 0
+  const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
+  const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
   const rangeSummary = !hasAvailableWeeks && !filters.startDate && !filters.endDate
     ? 'Aguardando importação'
     : `${effectiveRange.label} · ${effectiveRange.startDate ? formatDisplayDate(effectiveRange.startDate) : 'início'} até ${effectiveRange.endDate ? formatDisplayDate(effectiveRange.endDate) : 'hoje'}`
+
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: keyof Filters; label: string; value: string }> = []
-
     if (filters.startDate) chips.push({ key: 'startDate', label: 'Início', value: formatDisplayDate(filters.startDate) })
     if (filters.endDate) chips.push({ key: 'endDate', label: 'Fim', value: formatDisplayDate(filters.endDate) })
     if (filters.name) chips.push({ key: 'name', label: 'Parceiro', value: filters.name })
     if (filters.courierId) chips.push({ key: 'courierId', label: 'ID', value: filters.courierId })
     if (filters.turno) chips.push({ key: 'turno', label: 'Turno', value: filters.turno })
     if (filters.modal) chips.push({ key: 'modal', label: 'Modal', value: filters.modal })
-
     return chips
   }, [filters.courierId, filters.endDate, filters.modal, filters.name, filters.startDate, filters.turno])
 
   const deliveryTableRows = useMemo(() => {
-    if (isSingleDayView) {
-      return filteredRows.map<DeliveryTableRow>((row) => ({
-        key: row.id,
-        dateLabel: formatDisplayDate(row.delivery_date ?? '-'),
-        courier_id_txt: row.courier_id_txt,
-        conc: row.conc,
-        turno: row.turno,
-        online_time_pct: Number(row.online_time_pct || 0),
-        utr: row.utr === null ? null : Number(row.utr),
-        modal: row.modal,
-        pedidos: Number(row.pedidos || 0),
-        delivered_hours: Number(row.delivered_hours || 0),
-        sourceRows: 1,
-      }))
-    }
-
-    const grouped = new Map<string, {
-      courier_id_txt: string
-      conc: string
-      dates: string[]
-      turnos: Set<string>
-      modals: Set<string>
-      delivered_hours: number
-      pedidos: number
-      onlineSum: number
-      utrSum: number
-      utrCount: number
-      sourceRows: number
-    }>()
-
-    for (const row of filteredRows) {
-      const key = row.courier_id_txt || row.conc
-      const item = grouped.get(key) ?? {
-        courier_id_txt: row.courier_id_txt,
-        conc: row.conc,
-        dates: [],
-        turnos: new Set<string>(),
-        modals: new Set<string>(),
-        delivered_hours: 0,
-        pedidos: 0,
-        onlineSum: 0,
-        utrSum: 0,
-        utrCount: 0,
-        sourceRows: 0,
-      }
-
-      if (row.delivery_date) item.dates.push(row.delivery_date)
-      item.turnos.add(row.turno)
-      item.modals.add(row.modal)
-      item.delivered_hours += Number(row.delivered_hours || 0)
-      item.pedidos += Number(row.pedidos || 0)
-      item.onlineSum += Number(row.online_time_pct || 0)
-      const utr = row.utr === null ? Number.NaN : Number(row.utr)
-      if (Number.isFinite(utr)) {
-        item.utrSum += utr
-        item.utrCount += 1
-      }
-      item.sourceRows += 1
-      grouped.set(key, item)
-    }
-
-    return Array.from(grouped.entries()).map<DeliveryTableRow>(([key, item]) => {
-      const dates = item.dates.sort()
-      const firstDate = dates[0] ?? '-'
-      const lastDate = dates[dates.length - 1] ?? firstDate
-      return {
-        key,
-        dateLabel: firstDate === lastDate ? formatDisplayDate(firstDate) : `${formatDisplayDate(firstDate)} - ${formatDisplayDate(lastDate)}`,
-        courier_id_txt: item.courier_id_txt,
-        conc: item.conc,
-        turno: singleOrMultiple(item.turnos),
-        online_time_pct: item.sourceRows ? item.onlineSum / item.sourceRows : 0,
-        utr: item.utrCount ? item.utrSum / item.utrCount : null,
-        modal: singleOrMultiple(item.modals),
-        pedidos: item.pedidos,
-        delivered_hours: item.delivered_hours,
-        sourceRows: item.sourceRows,
-      }
-    }).sort((a, b) => b.delivered_hours - a.delivered_hours)
-  }, [filteredRows, isSingleDayView])
+    return dashboardPayload.tableRows.map((row) => ({
+      key: row.key,
+      dateLabel: row.firstDate === row.lastDate
+        ? formatDisplayDate(row.firstDate)
+        : `${formatDisplayDate(row.firstDate)} - ${formatDisplayDate(row.lastDate)}`,
+      courier_id_txt: row.courier_id_txt,
+      conc: row.conc,
+      turno: row.turno,
+      online_time_pct: Number(row.online_time_pct || 0),
+      utr: row.utr === null ? null : Number(row.utr),
+      modal: row.modal,
+      pedidos: Number(row.pedidos || 0),
+      delivered_hours: Number(row.delivered_hours || 0),
+      sourceRows: Number(row.sourceRows || 0),
+    }))
+  }, [dashboardPayload.tableRows])
 
   async function handleImport(file: File | null) {
     if (!file) return
@@ -505,6 +341,7 @@ export function App() {
       void batchId
       setNotice({ type: 'success', message: `Importação concluída. ${parsed.length} registros processados.` })
       await refreshData()
+      await loadDashboardPayload(0, 'replace')
       setActiveTab('dashboard')
     } catch (error) {
       setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Erro ao importar arquivo.' })
@@ -530,22 +367,15 @@ export function App() {
     if (!adminDays.length) return []
     const [year, month] = adminMonth.split('-').map(Number)
     const firstDate = new Date(year, month - 1, 1)
-    const firstDayOfWeek = firstDate.getDay() // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const firstDayOfWeek = firstDate.getDay()
     const paddingCount = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
-
     const padding = Array.from({ length: paddingCount }, (_, index) => ({
       iso: `padding-${index}`,
       day: 0,
       weekday: '',
       isPadding: true,
     }))
-
-    const realDays = adminDays.map((day) => ({
-      ...day,
-      isPadding: false,
-    }))
-
-    return [...padding, ...realDays]
+    return [...padding, ...adminDays.map((day) => ({ ...day, isPadding: false }))]
   }, [adminDays, adminMonth])
 
   const adminMonthTotal = useMemo(() => {
@@ -569,6 +399,7 @@ export function App() {
       await upsertDailyTargets(payload)
       setNotice({ type: 'success', message: `Metas de ${adminMonth} para ${adminTurno} salvas com sucesso.` })
       await refreshData()
+      await loadDashboardPayload(0, 'replace')
     } catch (error) {
       setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Erro ao salvar metas.' })
     } finally {
@@ -641,21 +472,13 @@ export function App() {
               <label><CalendarDays size={15} /> Fim <TooltipHint text="Mesma data no início e fim exibe a visão diária detalhada." /><input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} /></label>
               <label><Search size={15} /> Parceiro <TooltipHint text="Busca pelo nome do parceiro" /><input placeholder="Buscar parceiro..." value={filters.name} onChange={(event) => setFilters({ ...filters, name: event.target.value })} /></label>
               <label><Search size={15} /> ID <TooltipHint text="Busca pelo ID do entregador." /><input placeholder="Buscar ID..." value={filters.courierId} onChange={(event) => setFilters({ ...filters, courierId: event.target.value })} /></label>
-              <label><Filter size={15} /> Turno <TooltipHint text="Filtra pelo turno de trabalho." /><select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'turno').map((value) => <option key={value}>{value}</option>)}</select></label>
-              <label><Bike size={15} /> Modal <TooltipHint text="Filtra pelo tipo de veículo." /><select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{optionValues(rows, 'modal').map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label><Filter size={15} /> Turno <TooltipHint text="Filtra pelo turno de trabalho." /><select value={filters.turno} onChange={(event) => setFilters({ ...filters, turno: event.target.value })}><option value="">Todos</option>{turnoOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label><Bike size={15} /> Modal <TooltipHint text="Filtra pelo tipo de veículo." /><select value={filters.modal} onChange={(event) => setFilters({ ...filters, modal: event.target.value })}><option value="">Todos</option>{modalOptions.map((value) => <option key={value}>{value}</option>)}</select></label>
               <button
                 type="button"
                 className="clearFilters"
                 disabled={!hasManualFilters}
-                onClick={() => setFilters((current) => ({
-                  ...current,
-                  startDate: '',
-                  endDate: '',
-                  name: '',
-                  courierId: '',
-                  turno: '',
-                  modal: '',
-                }))}
+                onClick={() => setFilters((current) => ({ ...current, startDate: '', endDate: '', name: '', courierId: '', turno: '', modal: '' }))}
               >
                 Limpar filtros
               </button>
@@ -666,12 +489,7 @@ export function App() {
                 <span>Filtros ativos</span>
                 <div>
                   {activeFilterChips.map((chip) => (
-                    <button
-                      type="button"
-                      key={chip.key}
-                      onClick={() => setFilters((current) => ({ ...current, [chip.key]: '' }))}
-                      aria-label={`Remover filtro ${chip.label}`}
-                    >
+                    <button type="button" key={chip.key} onClick={() => setFilters((current) => ({ ...current, [chip.key]: '' }))} aria-label={`Remover filtro ${chip.label}`}>
                       <strong>{chip.label}</strong>
                       {chip.value}
                       <X size={13} />
@@ -693,7 +511,15 @@ export function App() {
               <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} targetComparison={targetComparison} />
             </Suspense>
 
-            <DeliveryTable rows={deliveryTableRows} isSingleDayView={isSingleDayView} />
+            <DeliveryTable
+              rows={deliveryTableRows}
+              totalRows={dashboardPayload.tableTotal}
+              isSingleDayView={isSingleDayView}
+              loading={dashboardLoading}
+              sort={tableSort}
+              onSortChange={setTableSort}
+              onLoadMore={() => loadDashboardPayload(tableOffset, 'append')}
+            />
           </>
         )}
 
@@ -739,9 +565,7 @@ export function App() {
                   <label>Turno
                     <select value={adminTurno} onChange={(event) => setAdminTurno(event.target.value)}>
                       {adminTurnoOptions.length === 0 && <option value="">Nenhum turno encontrado</option>}
-                      {adminTurnoOptions.map((turno) => (
-                        <option key={turno} value={turno}>{turno}</option>
-                      ))}
+                      {adminTurnoOptions.map((turno) => <option key={turno} value={turno}>{turno}</option>)}
                     </select>
                   </label>
                 </div>
@@ -758,13 +582,9 @@ export function App() {
               </div>
               <div className="calendarWrap">
                 <div className="monthTargets">
-                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => (
-                    <div key={d} className="calendarHeaderCell">{d}</div>
-                  ))}
+                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => <div key={d} className="calendarHeaderCell">{d}</div>)}
                   {adminCalendarGrid.map((day) => {
-                    if (day.isPadding) {
-                      return <div key={day.iso} className="dayTargetPadding" />
-                    }
+                    if (day.isPadding) return <div key={day.iso} className="dayTargetPadding" />
                     return (
                       <label className={clsx('dayTarget', Number(monthTargets[day.iso] || 0) > 0 && 'configured')} key={day.iso}>
                         <span>
@@ -813,7 +633,6 @@ function TooltipHint({ text }: { text: string }) {
 
 function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void }) {
   const Icon = notice.type === 'success' ? CheckCircle2 : AlertTriangle
-
   return (
     <section className={clsx('notice', notice.type)} role={notice.type === 'error' ? 'alert' : 'status'}>
       <Icon size={18} />
@@ -835,49 +654,47 @@ function Metric({ title, value, hint, strong, tooltip }: { title: string; value:
   )
 }
 
-function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; isSingleDayView: boolean }) {
-  const [sort, setSort] = useState<{ key: DeliverySortKey; direction: SortDirection }>({ key: 'delivered', direction: 'desc' })
-  const [visibleCount, setVisibleCount] = useState(tablePageSize)
+function DeliveryTable({
+  rows,
+  totalRows,
+  isSingleDayView,
+  loading,
+  sort,
+  onSortChange,
+  onLoadMore,
+}: {
+  rows: Array<{
+    key: string
+    dateLabel: string
+    courier_id_txt: string
+    conc: string
+    turno: string
+    online_time_pct: number
+    utr: number | null
+    modal: string
+    pedidos: number
+    delivered_hours: number
+    sourceRows: number
+  }>
+  totalRows: number
+  isSingleDayView: boolean
+  loading: boolean
+  sort: { key: DeliverySortKey; direction: SortDirection }
+  onSortChange: (sort: { key: DeliverySortKey; direction: SortDirection }) => void
+  onLoadMore: () => void
+}) {
+  const hiddenRows = Math.max(totalRows - rows.length, 0)
 
   function toggleSort(key: DeliverySortKey) {
-    setSort((current) => {
-      if (current.key !== key) return { key, direction: 'desc' }
-      return { key, direction: current.direction === 'desc' ? 'asc' : 'desc' }
-    })
+    if (sort.key !== key) onSortChange({ key, direction: 'desc' })
+    else onSortChange({ key, direction: sort.direction === 'desc' ? 'asc' : 'desc' })
   }
-
-  useEffect(() => {
-    setVisibleCount(tablePageSize)
-  }, [rows, sort])
-
-  const sortedRows = useMemo(() => {
-    return [...rows].sort((a, b) => {
-      const valueA = sort.key === 'online' ? a.online_time_pct : sort.key === 'utr' ? a.utr : a.delivered_hours
-      const valueB = sort.key === 'online' ? b.online_time_pct : sort.key === 'utr' ? b.utr : b.delivered_hours
-
-      if (valueA === null && valueB === null) return 0
-      if (valueA === null) return 1
-      if (valueB === null) return -1
-
-      const diff = valueA - valueB
-      return sort.direction === 'asc' ? diff : -diff
-    })
-  }, [rows, sort])
-
-  const visibleRows = useMemo(() => sortedRows.slice(0, visibleCount), [sortedRows, visibleCount])
-  const hiddenRows = Math.max(sortedRows.length - visibleRows.length, 0)
 
   function SortHeader({ label, sortKey }: { label: string; sortKey: DeliverySortKey }) {
     const active = sort.key === sortKey
     const nextDirection = active && sort.direction === 'desc' ? 'menor para maior' : 'maior para menor'
-
     return (
-      <button
-        type="button"
-        className={clsx('sortHeader', active && 'active')}
-        onClick={() => toggleSort(sortKey)}
-        aria-label={`Ordenar ${label} do ${nextDirection}`}
-      >
+      <button type="button" className={clsx('sortHeader', active && 'active')} onClick={() => toggleSort(sortKey)} aria-label={`Ordenar ${label} do ${nextDirection}`}>
         {label}
         <span>{active ? (sort.direction === 'desc' ? '↓' : '↑') : '↕'}</span>
       </button>
@@ -892,7 +709,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
           <h2>Entregadores</h2>
         </div>
         <div className="tableActions">
-          <span><Clock3 size={14} /> {formatNumber(rows.length)} {isSingleDayView ? 'linhas no dia' : 'entregadores'}</span>
+          <span><Clock3 size={14} /> {formatNumber(totalRows)} {isSingleDayView ? 'linhas no dia' : 'entregadores'}</span>
         </div>
       </div>
       <div className="tableWrap">
@@ -911,17 +728,17 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
             </tr>
           </thead>
           <tbody>
-            {sortedRows.length === 0 && (
+            {rows.length === 0 && (
               <tr>
                 <td colSpan={8}>
                   <div className="emptyTable">
-                    <strong>Nenhum entregador encontrado</strong>
-                    <span>Ajuste os filtros ou importe uma planilha para preencher esta visão.</span>
+                    <strong>{loading ? 'Carregando entregadores' : 'Nenhum entregador encontrado'}</strong>
+                    <span>{loading ? 'Buscando dados consolidados no Supabase.' : 'Ajuste os filtros ou importe uma planilha para preencher esta visão.'}</span>
                   </div>
                 </td>
               </tr>
             )}
-            {visibleRows.map((row) => (
+            {rows.map((row) => (
               <tr key={row.key}>
                 <td>{row.dateLabel}</td>
                 <td>{row.courier_id_txt}</td>
@@ -941,9 +758,9 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
       </div>
       {hiddenRows > 0 && (
         <div className="tableLoadMore">
-          <span>Mostrando {formatNumber(visibleRows.length)} de {formatNumber(sortedRows.length)} linhas para manter a navegação fluida.</span>
-          <button type="button" onClick={() => setVisibleCount((current) => current + tablePageSize)}>
-            Ver mais {formatNumber(Math.min(tablePageSize, hiddenRows))}
+          <span>Mostrando {formatNumber(rows.length)} de {formatNumber(totalRows)} linhas para manter a navegação fluida.</span>
+          <button type="button" onClick={onLoadMore} disabled={loading}>
+            {loading ? 'Carregando…' : `Ver mais ${formatNumber(Math.min(tablePageSize, hiddenRows))}`}
           </button>
         </div>
       )}
