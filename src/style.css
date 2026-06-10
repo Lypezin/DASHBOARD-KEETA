@@ -34,6 +34,12 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 204, 0, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 8%, rgba(21, 18, 10, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 204, 0, 0.08), transparent 360px),
+    var(--paper);
 }
 
 html,
@@ -542,6 +548,10 @@ select:disabled {
   transition: transform 280ms var(--ease-out), box-shadow 280ms var(--ease-out);
 }
 
+.metric:hover {
+  border-color: rgba(255, 204, 0, 0.24);
+}
+
 .metric::before {
   content: '';
   position: absolute;
@@ -597,6 +607,21 @@ select:disabled {
   gap: 6px;
 }
 
+.metric span i {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  border-radius: 10px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ink);
+  background:
+    linear-gradient(135deg, rgba(255, 204, 0, 0.22), rgba(255, 255, 255, 0.78)),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.70);
+  font-style: normal;
+}
+
 .metric strong {
   position: relative;
   z-index: 1;
@@ -619,6 +644,12 @@ select:disabled {
 
 .metric.strong strong {
   color: var(--ink);
+}
+
+.metric.strong span i {
+  color: var(--keeta-yellow);
+  background: var(--ink);
+  border-color: rgba(21, 18, 10, 0.28);
 }
 
 /* ─── Charts ────────────────────────────────────── */
@@ -858,6 +889,10 @@ select:disabled {
     rgba(255, 255, 255, 0.62);
 }
 
+.tableTitle h2 {
+  font-size: 20px;
+}
+
 .tableActions {
   display: inline-flex;
   align-items: center;
@@ -925,12 +960,14 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--ink);
+  background:
+    linear-gradient(180deg, #1d190f, var(--ink));
   color: var(--keeta-yellow);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  box-shadow: inset 0 -1px rgba(255, 204, 0, 0.16);
 }
 
 .sortHeader {
@@ -963,11 +1000,16 @@ th {
 }
 
 tbody tr {
-  transition: background 180ms var(--ease);
+  transition: background 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(21, 18, 10, 0.015);
 }
 
 tbody tr:hover {
   background: rgba(255, 204, 0, 0.08);
+  box-shadow: inset 3px 0 var(--keeta-yellow);
 }
 
 .emptyTable {
@@ -1000,6 +1042,32 @@ tbody tr:hover {
 .numericCell {
   font-variant-numeric: tabular-nums;
   font-weight: 650;
+}
+
+.onlineBadge {
+  min-width: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
+  background: rgba(21, 18, 10, 0.05);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onlineBadge.good {
+  border-color: rgba(31, 138, 76, 0.22);
+  background: rgba(31, 138, 76, 0.10);
+  color: var(--green);
+}
+
+.onlineBadge.low {
+  border-color: rgba(216, 74, 50, 0.22);
+  background: rgba(216, 74, 50, 0.10);
+  color: var(--red);
 }
 
 td small {
@@ -1082,10 +1150,12 @@ td small {
 }
 
 .importHero p:last-child {
-  margin-top: 8px;
-  max-width: 780px;
+  margin-top: 9px;
+  max-width: 680px;
   color: var(--muted);
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
 }
 
 .importIcon {
@@ -1124,6 +1194,18 @@ td small {
   transition: transform 280ms var(--ease-out), border-color 280ms var(--ease), box-shadow 280ms var(--ease-out), background 280ms var(--ease);
 }
 
+.premiumDrop::before {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border: 1px solid rgba(255, 204, 0, 0.22);
+  border-radius: 12px;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 280ms var(--ease), transform 280ms var(--ease-out);
+  pointer-events: none;
+}
+
 .premiumDrop:hover {
   transform: translateY(-4px) scale(1.008);
   border-color: var(--keeta-gold);
@@ -1131,6 +1213,12 @@ td small {
   background:
     linear-gradient(135deg, rgba(255, 204, 0, 0.18), rgba(255, 255, 255, 0.92)),
     rgba(255, 255, 255, 0.90);
+}
+
+.premiumDrop:hover::before,
+.premiumDrop:focus-visible::before {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .premiumDrop.loading svg {
@@ -1214,6 +1302,15 @@ td small {
   margin-bottom: 20px;
   padding-bottom: 18px;
   border-bottom: 1px solid rgba(21, 18, 10, 0.06);
+}
+
+.panelIntro {
+  margin-top: 8px;
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .adminSelectors {

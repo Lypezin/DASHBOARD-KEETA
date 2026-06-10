@@ -1,4 +1,5 @@
 import { lazy, Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   AlertTriangle,
   Bike,
@@ -117,6 +118,12 @@ function formatDurationHours(value: number) {
 function formatDecimal(value: number | null, digits = 2) {
   if (value === null || Number.isNaN(value)) return '-'
   return formatNumber(value, digits)
+}
+
+function getOnlineTone(value: number) {
+  if (value >= 85) return 'good'
+  if (value < 70) return 'low'
+  return 'neutral'
 }
 
 function normalizedTextKey(value: string) {
@@ -506,11 +513,11 @@ export function App() {
             )}
 
             <section className="kpis">
-              <Metric title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
-              <Metric title="Meta de horas" value={formatNumber(summary.targetTotal, 0)} hint="Planejado" tooltip="Total de horas planejadas no Admin para este período." />
-              <Metric title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Entregue vs meta" strong tooltip="Percentual de horas entregues em relação ao planejado." />
-              <Metric title="Pedidos" value={formatNumber(summary.pedidos, 0)} hint="Total no período" tooltip="Soma da coluna pedidos no período filtrado." />
-              <Metric title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
+              <Metric icon={<Clock3 size={17} />} title="Horas entregues" value={formatDurationHours(summary.delivered)} hint="Total no período" tooltip="Soma das horas programadas no período filtrado." />
+              <Metric icon={<Target size={17} />} title="Meta de horas" value={formatNumber(summary.targetTotal, 0)} hint="Planejado" tooltip="Total de horas planejadas no Admin para este período." />
+              <Metric icon={<CheckCircle2 size={17} />} title="Aderência" value={formatPercent(summary.targetAdherence)} hint="Entregue vs meta" strong tooltip="Percentual de horas entregues em relação ao planejado." />
+              <Metric icon={<FileSpreadsheet size={17} />} title="Pedidos" value={formatNumber(summary.pedidos, 0)} hint="Total no período" tooltip="Soma da coluna pedidos no período filtrado." />
+              <Metric icon={<Bike size={17} />} title="Entregadores" value={formatNumber(summary.couriers)} hint="Ativos" tooltip="Quantidade de entregadores únicos no período." />
             </section>
 
             <Suspense fallback={<section className="panel chartLoading" aria-label="Carregando gráficos"><span /><span /><span /></section>}>
@@ -536,6 +543,7 @@ export function App() {
               <div>
                 <p className="eyebrow">Importação de dados</p>
                 <h2>Importar planilha</h2>
+                <p>Envie a base atualizada e o painel recalcula horas, pedidos, turnos e entregadores automaticamente.</p>
               </div>
             </div>
             <label
@@ -565,6 +573,7 @@ export function App() {
                 <div>
                   <p className="eyebrow">Planejamento</p>
                   <h2>Metas diárias</h2>
+                  <p className="panelIntro">Escolha mês e turno para distribuir a meta de horas em cada dia.</p>
                 </div>
                 <div className="adminSelectors">
                   <label>Mês<input type="month" value={adminMonth} onChange={(event) => setAdminMonth(event.target.value)} /></label>
@@ -615,6 +624,7 @@ export function App() {
             <div className="panel shiftPanel">
               <p className="eyebrow">Configuração</p>
               <h2>Horas por turno</h2>
+              <p className="panelIntro">Referência operacional usada para padronizar cada janela de entrega.</p>
               {shifts.map((shift, index) => (
                 <label key={shift.turno}>{shift.turno}
                   <input type="number" value={shift.expected_hours} onChange={(event) => setShifts(shifts.map((item, itemIndex) => itemIndex === index ? { ...item, expected_hours: Number(event.target.value) } : item))} />
@@ -650,10 +660,10 @@ function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void })
   )
 }
 
-function Metric({ title, value, hint, strong, tooltip }: { title: string; value: string; hint: string; strong?: boolean; tooltip: string }) {
+function Metric({ icon, title, value, hint, strong, tooltip }: { icon: ReactNode; title: string; value: string; hint: string; strong?: boolean; tooltip: string }) {
   return (
     <article className={clsx('metric', strong && 'strong')}>
-      <span>{title}<TooltipHint text={tooltip} /></span>
+      <span><i>{icon}</i>{title}<TooltipHint text={tooltip} /></span>
       <strong>{value}</strong>
       <small>{hint}</small>
     </article>
@@ -750,7 +760,9 @@ function DeliveryTable({
                 <td>{row.courier_id_txt}</td>
                 <td>{row.conc}</td>
                 <td>{row.turno}</td>
-                <td className="numericCell">{formatPercent(row.online_time_pct)}</td>
+                <td className="numericCell">
+                  <span className={clsx('onlineBadge', getOnlineTone(row.online_time_pct))}>{formatPercent(row.online_time_pct)}</span>
+                </td>
                 <td className="numericCell">{formatDecimal(row.utr)}</td>
                 <td>{row.modal}</td>
                 <td className="numericCell">
