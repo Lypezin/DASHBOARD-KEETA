@@ -592,9 +592,11 @@ td small {
   position: relative;
   min-height: 540px;
   border-radius: var(--radius);
-  padding: 34px;
+  padding: 40px;
   overflow: hidden;
   animation: fadeUp 420ms var(--ease-out) both;
+  display: grid;
+  gap: 28px;
 }
 
 .importStage::before {
@@ -617,8 +619,7 @@ td small {
 .importHero {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-bottom: 28px;
+  gap: 20px;
 }
 
 .importHero p:last-child {
@@ -629,42 +630,48 @@ td small {
 }
 
 .importIcon {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius);
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  background: var(--ink);
+  background: linear-gradient(135deg, var(--ink), #2a2210);
   color: var(--keeta-yellow);
-  box-shadow: var(--shadow-soft);
-  transition: transform 300ms var(--ease-out);
+  box-shadow: 0 12px 32px rgba(21, 18, 10, 0.22);
+  transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
+  flex-shrink: 0;
 }
 
 .importIcon:hover {
-  transform: rotate(-6deg) scale(1.05);
+  transform: rotate(-6deg) scale(1.06);
+  box-shadow: 0 16px 40px rgba(21, 18, 10, 0.30);
 }
 
 .premiumDrop {
-  min-height: 230px;
+  min-height: 200px;
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 10px;
-  padding: 26px;
-  border: 1px dashed rgba(21, 18, 10, 0.24);
-  border-radius: var(--radius);
+  gap: 14px;
+  padding: 40px 32px;
+  border: 2px dashed rgba(21, 18, 10, 0.16);
+  border-radius: 16px;
   background:
-    linear-gradient(135deg, rgba(255, 204, 0, 0.16), rgba(255, 255, 255, 0.82)),
-    rgba(255, 255, 255, 0.78);
+    linear-gradient(135deg, rgba(255, 204, 0, 0.10), rgba(255, 255, 255, 0.90)),
+    rgba(255, 255, 255, 0.85);
   color: var(--ink);
   text-align: center;
-  transition: transform 280ms var(--ease-out), border-color 280ms var(--ease), box-shadow 280ms var(--ease-out);
+  cursor: pointer;
+  transition: transform 280ms var(--ease-out), border-color 280ms var(--ease), box-shadow 280ms var(--ease-out), background 280ms var(--ease);
 }
 
 .premiumDrop:hover {
-  transform: translateY(-4px) scale(1.005);
+  transform: translateY(-4px) scale(1.008);
   border-color: var(--keeta-gold);
-  box-shadow: var(--shadow-lift);
+  box-shadow: 0 20px 50px rgba(255, 204, 0, 0.14), var(--shadow-lift);
+  background:
+    linear-gradient(135deg, rgba(255, 204, 0, 0.18), rgba(255, 255, 255, 0.92)),
+    rgba(255, 255, 255, 0.90);
 }
 
 .premiumDrop.loading svg {
@@ -672,16 +679,34 @@ td small {
 }
 
 .premiumDrop strong {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .premiumDrop span {
-  max-width: 420px;
+  max-width: 440px;
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
   text-transform: none;
+  line-height: 1.5;
+}
+
+.dropIconWrap {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(21, 18, 10, 0.06);
+  color: var(--ink);
+  transition: background 280ms var(--ease), transform 280ms var(--ease-out);
+}
+
+.premiumDrop:hover .dropIconWrap {
+  background: rgba(255, 204, 0, 0.22);
+  transform: translateY(-2px);
 }
 
 .fileDrop input {
@@ -692,26 +717,27 @@ td small {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 18px;
 }
 
 .importChecklist span {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid rgba(21, 18, 10, 0.08);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.82);
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 1px solid rgba(21, 18, 10, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
-  transition: transform 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  box-shadow: 0 2px 8px rgba(21, 18, 10, 0.04);
 }
 
 .importChecklist span:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(21, 18, 10, 0.08);
 }
 
 .importChecklist svg {
@@ -725,39 +751,49 @@ td small {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 18px;
 }
 
 .importFields span {
-  padding: 6px 12px;
-  border: 1px solid rgba(21, 18, 10, 0.10);
+  padding: 7px 14px;
+  border: 1px solid rgba(21, 18, 10, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--ink-2);
   font-size: 12px;
-  font-weight: 600;
-  transition: background 200ms var(--ease), transform 200ms var(--ease-out);
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  letter-spacing: -0.01em;
+  transition: background 200ms var(--ease), transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
 .importFields span:hover {
-  background: rgba(255, 204, 0, 0.16);
-  transform: translateY(-1px);
+  background: rgba(255, 204, 0, 0.18);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 204, 0, 0.12);
 }
 
 /* ─── Buttons ───────────────────────────────────── */
 
 .primary {
-  height: 44px;
+  height: 48px;
   width: 100%;
-  background: var(--ink);
+  background: linear-gradient(135deg, var(--ink), #2a2210);
   color: var(--keeta-yellow);
+  font-size: 14px;
   font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 20px rgba(21, 18, 10, 0.16);
   transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
 }
 
 .primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lift);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(21, 18, 10, 0.24);
+}
+
+.primary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(21, 18, 10, 0.12);
 }
 
 /* ─── Admin ─────────────────────────────────────── */
@@ -775,7 +811,9 @@ td small {
   align-items: end;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(21, 18, 10, 0.06);
 }
 
 .adminSelectors {
@@ -789,38 +827,44 @@ td small {
 .adminSummary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .adminSummary div {
-  min-height: 82px;
-  padding: 14px;
-  border: 1px solid rgba(21, 18, 10, 0.08);
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, rgba(255, 204, 0, 0.12), rgba(255, 255, 255, 0.78));
+  min-height: 90px;
+  padding: 16px 18px;
+  border: 1px solid rgba(21, 18, 10, 0.06);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.10), rgba(255, 255, 255, 0.82));
   display: grid;
   align-content: space-between;
-  transition: transform 200ms var(--ease-out);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  box-shadow: 0 2px 8px rgba(21, 18, 10, 0.04);
 }
 
 .adminSummary div:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(21, 18, 10, 0.10);
 }
 
 .adminSummary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .adminSummary strong {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .calendarWrap {
@@ -853,15 +897,15 @@ td small {
 }
 
 .calendarHeaderCell {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
   text-transform: uppercase;
   text-align: center;
-  padding: 6px 0;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid rgba(21, 18, 10, 0.06);
-  margin-bottom: 4px;
+  padding: 8px 0;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid rgba(21, 18, 10, 0.08);
+  margin-bottom: 6px;
 }
 
 .dayTargetPadding {
@@ -872,18 +916,19 @@ td small {
 }
 
 .dayTarget {
-  min-height: 92px;
-  padding: 10px;
-  border: 1px solid rgba(21, 18, 10, 0.08);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.72);
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease), box-shadow 200ms var(--ease-out);
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid rgba(21, 18, 10, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.80);
+  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease), box-shadow 200ms var(--ease-out), background 200ms var(--ease);
 }
 
 .dayTarget:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 204, 0, 0.40);
-  box-shadow: 0 8px 20px rgba(30, 24, 8, 0.08);
+  transform: translateY(-3px);
+  border-color: rgba(255, 204, 0, 0.45);
+  box-shadow: 0 10px 24px rgba(30, 24, 8, 0.10);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .dayTarget span {
@@ -895,23 +940,53 @@ td small {
 }
 
 .dayTarget strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
+  color: var(--ink);
 }
 
 .dayTarget small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .dayTarget input {
-  height: 36px;
+  height: 38px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .shiftPanel {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  align-content: start;
+}
+
+.shiftPanel h2 {
+  margin-bottom: 2px;
+}
+
+.shiftPanel label {
+  padding: 14px 16px;
+  border: 1px solid rgba(21, 18, 10, 0.06);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+
+.shiftPanel label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(21, 18, 10, 0.08);
+}
+
+.shiftPanel input {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ─── Tooltips ──────────────────────────────────── */

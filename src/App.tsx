@@ -3,7 +3,6 @@ import {
   Bike,
   CalendarDays,
   CalendarRange,
-  CheckCircle2,
   Clock3,
   Database,
   FileSpreadsheet,
@@ -14,8 +13,11 @@ import {
   RefreshCw,
   Save,
   Search,
+  Shield,
   SlidersHorizontal,
+  Target,
   Upload,
+  Zap,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { addDays, format, getDaysInMonth } from 'date-fns'
@@ -623,7 +625,7 @@ export function App() {
         {activeTab === 'import' && (
           <section className="importStage">
             <div className="importHero">
-              <div className="importIcon"><FileSpreadsheet size={34} /></div>
+              <div className="importIcon"><FileSpreadsheet size={30} /></div>
               <div>
                 <p className="eyebrow">Importação de dados</p>
                 <h2>Importar planilha</h2>
@@ -631,17 +633,19 @@ export function App() {
             </div>
             <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
               <input type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
-              {loading ? <LoaderCircle size={22} /> : <Upload size={22} />}
-              <strong>{loading ? 'Processando…' : 'Selecionar arquivo'}</strong>
-              <span>Os dados serão normalizados e salvos automaticamente.</span>
+              <div className="dropIconWrap">
+                {loading ? <LoaderCircle size={28} /> : <Upload size={28} />}
+              </div>
+              <strong>{loading ? 'Processando…' : 'Clique para selecionar o arquivo'}</strong>
+              <span>Arraste ou selecione um arquivo XLSX ou CSV</span>
             </label>
             <div className="importChecklist">
-              <span><CheckCircle2 size={16} /> Calcula horas a partir da planilha</span>
-              <span><CheckCircle2 size={16} /> Mantém os dados originais como backup</span>
-              <span><CheckCircle2 size={16} /> Atualiza o painel ao finalizar</span>
+              <span><Zap size={17} /> Calcula horas automaticamente</span>
+              <span><Shield size={17} /> Mantém backup dos dados originais</span>
+              <span><RefreshCw size={17} /> Atualiza o painel ao finalizar</span>
             </div>
-            <div style={{ marginTop: '20px' }}>
-              <p className="eyebrow" style={{ marginBottom: '6px' }}>Colunas obrigatórias na planilha</p>
+            <div>
+              <p className="eyebrow" style={{ marginBottom: '10px' }}>Colunas obrigatórias na planilha</p>
               <div className="importFields">
                 {['Turno', '%OnlineTime', 'UTR', 'Conc', 'courier_id_txt', 'modal', 'total_hours_scheduled'].map((field) => (
                   <span key={field}>{field}</span>
@@ -673,11 +677,11 @@ export function App() {
               </div>
               <div className="adminSummary">
                 <div>
-                  <span>Meta do mês {adminTurno ? `· ${adminTurno}` : ''}</span>
+                  <span><Target size={14} /> Meta do mês {adminTurno ? `· ${adminTurno}` : ''}</span>
                   <strong>{formatDurationHours(adminMonthTotal)}</strong>
                 </div>
                 <div>
-                  <span>Dias configurados</span>
+                  <span><CalendarDays size={14} /> Dias configurados</span>
                   <strong>{Object.values(monthTargets).filter((value) => Number(value) > 0).length}</strong>
                 </div>
               </div>
@@ -712,7 +716,7 @@ export function App() {
               <button className="primary" onClick={saveMonthTargets} disabled={loading}><Save size={17} /> Salvar metas</button>
             </div>
             <div className="panel shiftPanel">
-              <p className="eyebrow">Turnos</p>
+              <p className="eyebrow">Configuração</p>
               <h2>Horas por turno</h2>
               {shifts.map((shift, index) => (
                 <label key={shift.turno}>{shift.turno}
