@@ -81,6 +81,7 @@ export async function fetchDashboardPayload(params: {
     summary: { delivered: 0, pedidos: 0, couriers: 0, targetTotal: 0, targetAdherence: 0 },
     byTurno: [],
     byModal: [],
+    byDay: [],
     tableRows: [],
     tableTotal: 0,
   }

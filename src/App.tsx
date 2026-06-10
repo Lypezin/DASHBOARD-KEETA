@@ -44,6 +44,7 @@ const emptyDashboardPayload: DashboardPayload = {
   summary: { delivered: 0, pedidos: 0, couriers: 0, targetTotal: 0, targetAdherence: 0 },
   byTurno: [],
   byModal: [],
+  byDay: [],
   tableRows: [],
   tableTotal: 0,
 }
@@ -295,12 +296,13 @@ export function App() {
   const summary = dashboardPayload.summary
   const byTurno = dashboardPayload.byTurno
   const byModal = dashboardPayload.byModal
+  const byDay = dashboardPayload.byDay
   const targetComparison = useMemo(() => ({
     delivered: summary.delivered,
     target: summary.targetTotal,
     remaining: Math.max(summary.targetTotal - summary.delivered, 0),
-    adherence: summary.targetTotal > 0 ? (summary.delivered / summary.targetTotal) * 100 : 0,
-  }), [summary.delivered, summary.targetTotal])
+    adherence: summary.targetAdherence,
+  }), [summary.delivered, summary.targetAdherence, summary.targetTotal])
 
   const hasAvailableWeeks = availableWeeks.length > 0
   const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
@@ -521,7 +523,7 @@ export function App() {
             </section>
 
             <Suspense fallback={<section className="panel chartLoading" aria-label="Carregando gráficos"><span /><span /><span /></section>}>
-              <DashboardCharts byTurno={byTurno} byModal={byModal} modalColors={modalColors} targetComparison={targetComparison} />
+              <DashboardCharts byTurno={byTurno} byModal={byModal} byDay={byDay} modalColors={modalColors} targetComparison={targetComparison} />
             </Suspense>
 
             <DeliveryTable

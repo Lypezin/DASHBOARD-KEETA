@@ -7,6 +7,8 @@ import {
   Cell,
   LabelList,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -25,6 +27,12 @@ type TurnoChartRow = {
 type ModalChartRow = {
   name: string
   value: number
+}
+
+type DayChartRow = {
+  date: string
+  delivered: number
+  pedidos: number
 }
 
 type TargetComparison = {
@@ -65,6 +73,12 @@ function formatDurationHours(value: number) {
   return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+function formatShortDate(value: string) {
+  const [year, month, day] = value.split('-')
+  if (!year || !month || !day) return value
+  return `${day}/${month}`
+}
+
 function ChartEmpty({ message }: { message: string }) {
   return (
     <div className="chartEmpty">
@@ -83,7 +97,7 @@ function ChartTooltip({
   active?: boolean
   payload?: TooltipEntry[]
   label?: string
-  mode: 'hours' | 'percent' | 'modal'
+  mode: 'hours' | 'percent' | 'modal' | 'daily'
 }) {
   if (!active || !payload?.length) return null
 
@@ -93,7 +107,10 @@ function ChartTooltip({
       {payload.map((entry) => {
         const value = Number(entry.value ?? 0)
         const modalPercent = Number(entry.payload?.percent ?? 0)
-        const formattedValue = mode === 'percent'
+        const entryName = String(entry.name ?? '')
+        const formattedValue = mode === 'daily' && entryName.toLowerCase().includes('pedido')
+          ? formatNumber(value, 0)
+          : mode === 'percent'
           ? formatPercent(value)
           : mode === 'modal'
             ? `${formatDurationHours(value)} · ${formatPercent(modalPercent)}`
@@ -114,11 +131,13 @@ function ChartTooltip({
 export function DashboardCharts({
   byTurno,
   byModal,
+  byDay,
   modalColors,
   targetComparison,
 }: {
   byTurno: TurnoChartRow[]
   byModal: ModalChartRow[]
+  byDay: DayChartRow[]
   modalColors: string[]
   targetComparison: TargetComparison
 }) {
@@ -130,6 +149,7 @@ export function DashboardCharts({
   const hasTurnoData = byTurno.some((item) => item.delivered > 0 || item.target > 0 || item.online > 0)
   const hasModalData = modalData.some((item) => item.value > 0)
   const hasGoalData = targetComparison.target > 0 || targetComparison.delivered > 0
+  const hasDayData = byDay.some((item) => item.delivered > 0 || item.pedidos > 0)
   const dominantModal = modalData.reduce((current, item) => item.value > current.value ? item : current, { name: 'Sem modal', value: 0, percent: 0 })
   const goalData = [
     { name: 'Meta', hours: targetComparison.target, fill: '#15120a' },
@@ -286,6 +306,35 @@ export function DashboardCharts({
             </AreaChart>
           </ResponsiveContainer>
         ) : <ChartEmpty message="Sem aderência online para os filtros atuais." />}
+      </div>
+
+      <div className="panel chartPanel wide timelinePanel">
+        <div className="chartHeader">
+          <div>
+            <p className="eyebrow">Evolução diária</p>
+            <h2>Horas entregues e pedidos por dia</h2>
+          </div>
+        </div>
+        {hasDayData ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={byDay} margin={{ top: 12, right: 8, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(21,18,10,0.08)" />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatShortDate}
+                tickLine={false}
+                axisLine={{ stroke: 'rgba(21,18,10,0.12)' }}
+                tick={chartTick}
+              />
+              <YAxis yAxisId="hours" tickLine={false} axisLine={false} tick={chartTick} />
+              <YAxis yAxisId="orders" orientation="right" tickLine={false} axisLine={false} tick={chartTickStrong} />
+              <Tooltip labelFormatter={(value) => formatShortDate(String(value))} content={<ChartTooltip mode="daily" />} />
+              <Legend verticalAlign="top" align="right" iconType="circle" iconSize={8} wrapperStyle={legendStyle} />
+              <Line yAxisId="hours" type="monotone" dataKey="delivered" name="Horas entregues" stroke="#ffcc00" strokeWidth={3} dot={{ r: 4, strokeWidth: 2, fill: '#fff7d1' }} activeDot={{ r: 6 }} />
+              <Line yAxisId="orders" type="monotone" dataKey="pedidos" name="Pedidos" stroke="#15120a" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : <ChartEmpty message="Sem dados diários para os filtros atuais." />}
       </div>
     </section>
   )

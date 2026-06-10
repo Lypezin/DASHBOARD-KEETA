@@ -72,6 +72,12 @@ export type DashboardModalRow = {
   value: number
 }
 
+export type DashboardDayRow = {
+  date: string
+  delivered: number
+  pedidos: number
+}
+
 export type DashboardTableRow = {
   key: string
   firstDate: string | null
@@ -97,6 +103,7 @@ export type DashboardPayload = {
   summary: DashboardSummary
   byTurno: DashboardTurnoRow[]
   byModal: DashboardModalRow[]
+  byDay: DashboardDayRow[]
   tableRows: DashboardTableRow[]
   tableTotal: number
 }

@@ -873,6 +873,10 @@ select:disabled {
   min-width: 0;
 }
 
+.timelinePanel {
+  grid-column: 1 / -1;
+}
+
 /* ─── Table ─────────────────────────────────────── */
 
 .tablePanel {
