@@ -455,6 +455,13 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.20);
 }
 
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+  color: rgba(116, 109, 90, 0.72);
+  background: rgba(255, 255, 255, 0.56);
+}
+
 .weekPair {
   display: grid;
   grid-template-columns: 1fr 0.65fr;

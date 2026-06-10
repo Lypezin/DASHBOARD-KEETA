@@ -396,6 +396,10 @@ export function App() {
 
   const isSingleDayView = Boolean(effectiveRange.startDate && effectiveRange.endDate && effectiveRange.startDate === effectiveRange.endDate)
   const hasManualFilters = Boolean(filters.startDate || filters.endDate || filters.name || filters.courierId || filters.turno || filters.modal)
+  const hasAvailableWeeks = availableWeeks.length > 0
+  const rangeSummary = !hasAvailableWeeks && !filters.startDate && !filters.endDate
+    ? 'Aguardando importação'
+    : `${effectiveRange.label} · ${effectiveRange.startDate ? formatDisplayDate(effectiveRange.startDate) : 'início'} até ${effectiveRange.endDate ? formatDisplayDate(effectiveRange.endDate) : 'hoje'}`
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: keyof Filters; label: string; value: string }> = []
 
@@ -607,7 +611,7 @@ export function App() {
           <div>
             <p className="eyebrow">Painel operacional</p>
             <h1>Aderência e horas entregues</h1>
-            <span className="rangePill">{effectiveRange.label} · {effectiveRange.startDate ? formatDisplayDate(effectiveRange.startDate) : 'início'} até {effectiveRange.endDate ? formatDisplayDate(effectiveRange.endDate) : 'hoje'}</span>
+            <span className="rangePill">{rangeSummary}</span>
           </div>
           <button className={clsx('iconButton', loading && 'loading')} onClick={refreshData} disabled={loading} title="Atualizar dados" aria-busy={loading}>
             <RefreshCw size={18} />
@@ -622,6 +626,7 @@ export function App() {
               <label><CalendarRange size={15} /> Semana <TooltipHint text="Apenas semanas com dados. Ao preencher datas manuais, elas têm prioridade." />
                 <select
                   value={`${filters.weekYear}-${String(filters.weekNumber).padStart(2, '0')}`}
+                  disabled={!hasAvailableWeeks}
                   onChange={(event) => {
                     const selected = availableWeeks.find((week) => week.key === event.target.value)
                     if (!selected) return
