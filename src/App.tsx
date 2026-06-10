@@ -105,7 +105,7 @@ function formatNumber(value: number, digits = 0) {
 }
 
 function formatPercent(value: number) {
-  return `${formatNumber(value, 1)}%`
+  return `${formatNumber(value, 2)}%`
 }
 
 function formatDurationHours(value: number) {
