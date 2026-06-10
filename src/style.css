@@ -51,6 +51,26 @@ button:disabled {
   opacity: 0.66;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+.premiumDrop:focus-visible {
+  outline: 2px solid rgba(242, 184, 0, 0.85);
+  outline-offset: 3px;
+}
+
+caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ─── Layout shell ──────────────────────────────── */
 
 .shell {

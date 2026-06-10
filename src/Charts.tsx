@@ -83,8 +83,8 @@ function ChartTooltip({
   if (!active || !payload?.length) return null
 
   return (
-    <div className="chartTooltip" style={{ fontFamily: 'Inter' }}>
-      {label && <strong style={{ fontFamily: 'Inter' }}>{label}</strong>}
+    <div className="chartTooltip">
+      {label && <strong>{label}</strong>}
       {payload.map((entry) => {
         const value = Number(entry.value ?? 0)
         const modalPercent = Number(entry.payload?.percent ?? 0)
@@ -96,7 +96,7 @@ function ChartTooltip({
         const name = mode === 'modal' ? String(entry.payload?.name ?? entry.name ?? 'Modal') : entry.name
 
         return (
-          <span key={`${name}-${formattedValue}`} style={{ fontFamily: 'Inter' }}>
+          <span key={`${name}-${formattedValue}`}>
             <i style={{ backgroundColor: entry.color }} />
             {name}: {formattedValue}
           </span>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bike,
   CalendarDays,
@@ -192,6 +192,7 @@ export function App() {
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'dashboard' | 'admin' | 'import'>('dashboard')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function refreshData() {
     setLoading(true)
@@ -564,13 +565,13 @@ export function App() {
       <aside className="sidebar">
         <div className="brandMark">KEETA</div>
         <nav className="nav">
-          <button className={clsx(activeTab === 'dashboard' && 'active')} onClick={() => setActiveTab('dashboard')}>
+          <button className={clsx(activeTab === 'dashboard' && 'active')} onClick={() => setActiveTab('dashboard')} aria-pressed={activeTab === 'dashboard'}>
             <SlidersHorizontal size={18} /> Dashboard
           </button>
-          <button className={clsx(activeTab === 'import' && 'active')} onClick={() => setActiveTab('import')}>
+          <button className={clsx(activeTab === 'import' && 'active')} onClick={() => setActiveTab('import')} aria-pressed={activeTab === 'import'}>
             <Upload size={18} /> Importar
           </button>
-          <button className={clsx(activeTab === 'admin' && 'active')} onClick={() => setActiveTab('admin')}>
+          <button className={clsx(activeTab === 'admin' && 'active')} onClick={() => setActiveTab('admin')} aria-pressed={activeTab === 'admin'}>
             <Database size={18} /> Admin
           </button>
         </nav>
@@ -655,8 +656,17 @@ export function App() {
                 <h2>Importar planilha</h2>
               </div>
             </div>
-            <label className={clsx('fileDrop premiumDrop', loading && 'loading')}>
-              <input type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
+            <label
+              className={clsx('fileDrop premiumDrop', loading && 'loading')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                fileInputRef.current?.click()
+              }}
+            >
+              <input ref={fileInputRef} type="file" accept=".xlsx,.csv" onChange={(event) => handleImport(event.target.files?.[0] ?? null)} />
               <div className="dropIconWrap">
                 {loading ? <LoaderCircle size={28} /> : <Upload size={28} />}
               </div>
@@ -815,6 +825,7 @@ function DeliveryTable({ rows, isSingleDayView }: { rows: DeliveryTableRow[]; is
       </div>
       <div className="tableWrap">
         <table>
+          <caption>Entregadores filtrados no período selecionado</caption>
           <thead>
             <tr>
               <th>Data</th>
