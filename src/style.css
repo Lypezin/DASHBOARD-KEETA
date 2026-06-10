@@ -456,6 +456,21 @@ select:focus {
   animation: fadeUp 400ms var(--ease-out) both;
 }
 
+@supports (content-visibility: auto) {
+  .chartPanel,
+  .tablePanel,
+  .monthPanel,
+  .shiftPanel,
+  .importStage {
+    content-visibility: auto;
+    contain-intrinsic-size: 520px;
+  }
+
+  .tablePanel {
+    contain-intrinsic-size: 760px;
+  }
+}
+
 .chartPanel {
   min-width: 0;
   display: grid;
@@ -1351,6 +1366,15 @@ td small {
 
   .importHero {
     align-items: flex-start;
+  }
+
+  .tableLoadMore {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tableLoadMore button {
+    width: 100%;
   }
 }
 
